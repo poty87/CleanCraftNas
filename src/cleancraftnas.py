@@ -14,74 +14,35 @@ import json
 import os
 import shutil
 import subprocess
-import sys
 import tempfile
 import threading
+import time
 import tkinter as tk
-import winreg
 from ctypes import wintypes
-from tkinter import filedialog, font as tkfont, ttk
+from tkinter import filedialog, ttk
 
-import sv_ttk
 from PIL import Image, ImageOps, ImageTk
 
-from translations import DATE_FORMATS, LANGUAGES, TEXTS
+import i18n
+import updater
+from i18n import registry_value, t
+from translations import DATE_FORMATS, LANGUAGES
+from ui_theme import (LEVELS, MUTED, TEXT, Dialog, center_on, dark_title_bar, dpi_aware, set_icon,
+                      setup_theme)
+from version import APP_NAME, VERSION
 
-APP_NAME = "CleanCraftNas"
-VERSION = "1.2.0"
 LOCAL = os.environ.get("LOCALAPPDATA") or os.path.expanduser("~")
 # impostazioni e registro dell'utente: l'app installata vive in una cartella che non si modifica
 DATA_DIR = os.path.join(LOCAL, APP_NAME)
 OLD_DATA_DIR = os.path.join(LOCAL, "Pulizia cestino Lightcraft")  # nome delle versioni fino alla 1.1
 SETTINGS = os.path.join(DATA_DIR, "settings.json")
 LOG = os.path.join(DATA_DIR, "cleancraftnas.log")
-REG_KEY = r"Software\CleanCraftNas"  # la lingua scelta durante l'installazione
 DEFAULT_CLI = os.path.join(LOCAL, r"Programs\ArtCraft\LightCraft\lightcraft-cli.exe")
 # file con lo stesso nome della foto che vengono cancellati insieme a lei
 COMPANIONS = (".xmp", ".jpg", ".jpeg")
 BACKUPS_KEPT = 5
+UPDATE_EVERY = 12 * 3600  # secondi tra due controlli automatici degli aggiornamenti
 NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
-
-
-def resource(*parts):
-    """Percorso di un file dell'app, sia da sorgente sia dall'eseguibile installato."""
-    if getattr(sys, "frozen", False):
-        base = os.path.dirname(sys.executable)
-    else:
-        base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    return os.path.join(base, *parts)
-
-
-# ---------------------------------------------------------------- lingua
-
-LANG = "en"
-
-
-def t(key, **values):
-    text = TEXTS[key].get(LANG) or TEXTS[key]["en"]
-    return text.format(**values) if values else text
-
-
-def windows_language():
-    """Lingua dell'interfaccia di Windows, se è tra quelle supportate."""
-    primary = {0x10: "it", 0x09: "en", 0x07: "de", 0x0A: "es", 0x0C: "fr", 0x16: "pt"}
-    try:
-        return primary.get(ctypes.windll.kernel32.GetUserDefaultUILanguage() & 0x3FF, "en")
-    except (AttributeError, OSError):
-        return "en"
-
-
-def installer_language():
-    try:
-        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, REG_KEY) as key:
-            return winreg.QueryValueEx(key, "Language")[0]
-    except OSError:
-        return None
-
-
-def resolve_language(setting):
-    """"auto" o una lingua non supportata diventano la lingua di Windows."""
-    return setting if setting in LANGUAGES else windows_language()
 
 
 # ---------------------------------------------------------------- impostazioni e registro
@@ -347,126 +308,17 @@ def execute(lib, cli, plan):
     return {"removed": len(removed), "files": deleted_files, "failed": failed, "left": left, "backup": backup}
 
 
-# ---------------------------------------------------------------- aspetto
-
 def human(n):
     for unit in ("B", "KB", "MB", "GB"):
         if n < 1024 or unit == "GB":
             if unit == "B":
                 return f"{n:.0f} {unit}"
             text = f"{n:.1f} {unit}"
-            return text if LANG == "en" else text.replace(".", ",")
+            return text if i18n.LANG == "en" else text.replace(".", ",")
         n /= 1024
 
 
-# colori del banner di stato e delle icone delle finestre: (sfondo, accento)
-LEVELS = {
-    "info": ("#1d2633", "#60a5fa"),
-    "ok": ("#16261d", "#4ade80"),
-    "warn": ("#2c2416", "#fbbf24"),
-    "error": ("#2d1a1c", "#f87171"),
-}
-GLYPHS = {"info": "i", "ok": "✓", "warn": "!", "error": "✕"}
-MUTED = "#9aa0a6"
-TEXT = "#e8eaed"
-
-
-def dark_title_bar(window):
-    """Barra del titolo scura su Windows 10/11."""
-    try:
-        window.update_idletasks()
-        hwnd = ctypes.windll.user32.GetParent(window.winfo_id())
-        value = ctypes.c_int(1)
-        for attr in (20, 19):  # DWMWA_USE_IMMERSIVE_DARK_MODE (nuovo e vecchio numero)
-            if ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, attr, ctypes.byref(value), ctypes.sizeof(value)) == 0:
-                break
-    except (AttributeError, OSError):
-        pass
-
-
-def set_icon(window):
-    try:
-        window.iconbitmap(resource("assets", "icon.ico"))
-    except tk.TclError:
-        pass
-
-
-class Dialog(tk.Toplevel):
-    """Finestra modale con il tema dell'app, al posto delle messagebox di sistema.
-
-    buttons: [(chiave del risultato, testo, principale?)]; Esc e la chiusura restituiscono None.
-    """
-
-    def __init__(self, master, title, heading, body, level="info", buttons=None, detail=None, default=None):
-        super().__init__(master)
-        self.withdraw()
-        self.title(title)
-        self.resizable(False, False)
-        self.transient(master)
-        set_icon(self)
-        self.result = None
-        app = master._root()  # la finestra principale ha i caratteri; si centra su chi apre la finestra
-        frame = ttk.Frame(self, padding=(24, 22, 24, 18))
-        frame.pack(fill="both", expand=True)
-
-        bg, accent = LEVELS[level]
-        top = ttk.Frame(frame)
-        top.pack(fill="x")
-        badge = tk.Canvas(top, width=40, height=40, highlightthickness=0, bd=0,
-                          bg=ttk.Style(self).lookup("TFrame", "background") or "#1c1c1c")
-        badge.create_oval(2, 2, 38, 38, fill=bg, outline=accent, width=2)
-        badge.create_text(20, 20, text=GLYPHS[level], fill=accent, font=app.f_strong)
-        badge.pack(side="left", anchor="n")
-        texts = ttk.Frame(top)
-        texts.pack(side="left", fill="x", expand=True, padx=(14, 0))
-        ttk.Label(texts, text=heading, style="Strong.TLabel", wraplength=440, justify="left").pack(anchor="w")
-        if body:
-            ttk.Label(texts, text=body, wraplength=440, justify="left", font=app.f_body).pack(anchor="w", pady=(6, 0))
-        if detail:
-            lines = sum(max(1, -(-len(line) // 58)) for line in detail.split("\n"))  # righe a capo comprese
-            box = tk.Text(texts, height=min(10, lines), width=58, wrap="char", relief="flat",
-                          bg="#141414", fg=TEXT, insertbackground=TEXT, font=("Consolas", 9), padx=8, pady=6)
-            box.insert("1.0", detail)
-            box.configure(state="disabled")
-            box.pack(anchor="w", pady=(10, 0), fill="x")
-
-        row = ttk.Frame(frame)
-        row.pack(fill="x", pady=(20, 0))
-        buttons = buttons or [("ok", t("btn_ok"), True)]
-        focus = None
-        for key, text, primary in reversed(buttons):
-            b = ttk.Button(row, text=text, style="Accent.TButton" if primary else "TButton",
-                           command=lambda k=key: self.close(k))
-            b.pack(side="right", padx=(8, 0))
-            b.bind("<Return>", lambda e, k=key: self.close(k))
-            if key == (default or buttons[-1][0]):
-                focus = b
-        self.bind("<Escape>", lambda e: self.close(None))
-        self.protocol("WM_DELETE_WINDOW", lambda: self.close(None))
-
-        self.update_idletasks()
-        x = master.winfo_rootx() + (master.winfo_width() - self.winfo_reqwidth()) // 2
-        y = master.winfo_rooty() + (master.winfo_height() - self.winfo_reqheight()) // 3
-        self.geometry(f"+{max(0, x)}+{max(0, y)}")
-        dark_title_bar(self)
-        self.deiconify()
-        self.grab_set()
-        (focus or self).focus_set()
-
-    def close(self, result):
-        self.result = result
-        self.grab_release()
-        parent = self.master
-        self.destroy()
-        if isinstance(parent, tk.Toplevel) and parent.winfo_exists():
-            parent.grab_set()  # torna modale la finestra da cui era stata aperta (es. Impostazioni)
-
-    @classmethod
-    def ask(cls, master, *args, **kwargs):
-        d = cls(master, *args, **kwargs)
-        master.wait_window(d)
-        return d.result
-
+# ---------------------------------------------------------------- impostazioni
 
 class SettingsDialog(tk.Toplevel):
     def __init__(self, app):
@@ -498,6 +350,15 @@ class SettingsDialog(tk.Toplevel):
         ttk.Button(row, text=t("btn_browse"), command=self.browse).pack(side="left", padx=(8, 0))
         ttk.Label(frame, text=t("cli_hint"), style="Muted.TLabel").pack(anchor="w", pady=(4, 0))
 
+        ttk.Label(frame, text=t("updates_label").upper(), style="Muted.TLabel").pack(anchor="w", pady=(18, 4))
+        row = ttk.Frame(frame)
+        row.pack(fill="x")
+        self.auto_update = tk.BooleanVar(value=app.settings.get("check_updates", True))
+        ttk.Checkbutton(row, text=t("upd_auto"), variable=self.auto_update).pack(side="left")
+        ttk.Button(row, text=t("upd_check_now"), command=lambda: app.check_updates(manual=True, parent=self)).pack(
+            side="right")
+        ttk.Label(frame, text=t("upd_hint"), style="Muted.TLabel").pack(anchor="w", pady=(4, 0))
+
         ttk.Label(frame, text=f"{APP_NAME} · " + t("about", version=VERSION), style="Muted.TLabel").pack(
             anchor="w", pady=(18, 0))
         buttons = ttk.Frame(frame)
@@ -506,10 +367,7 @@ class SettingsDialog(tk.Toplevel):
         ttk.Button(buttons, text=t("btn_cancel"), command=self.destroy).pack(side="right", padx=(0, 8))
         self.bind("<Escape>", lambda e: self.destroy())
 
-        self.update_idletasks()
-        x = app.winfo_rootx() + (app.winfo_width() - self.winfo_reqwidth()) // 2
-        y = app.winfo_rooty() + (app.winfo_height() - self.winfo_reqheight()) // 3
-        self.geometry(f"+{max(0, x)}+{max(0, y)}")
+        center_on(self, app)
         dark_title_bar(self)
         self.deiconify()
         self.grab_set()
@@ -528,6 +386,7 @@ class SettingsDialog(tk.Toplevel):
             Dialog.ask(self, t("settings"), t("cli_bad"), cli, level="warn")
             return
         self.app.settings["language"] = self.lang_codes[self.lang.current()]
+        self.app.settings["check_updates"] = bool(self.auto_update.get())
         if cli and os.path.normcase(cli) != os.path.normcase(DEFAULT_CLI):
             self.app.settings["cli"] = cli
         else:
@@ -541,21 +400,19 @@ class SettingsDialog(tk.Toplevel):
 
 class App(tk.Tk):
     def __init__(self):
-        global LANG
         super().__init__()
         self.withdraw()
         self.title(APP_NAME)
         self.geometry("1240x740")
         self.minsize(900, 560)
         set_icon(self)
-        sv_ttk.set_theme("dark")
+        setup_theme(self)
         self.settings = load_settings()
-        LANG = resolve_language(self.settings.get("language") or installer_language())
+        i18n.set_language(self.settings.get("language") or registry_value("Language"))
         self.plan = []
         self.reason = None
+        self.release = None  # ultima release più nuova di questa, se trovata
         self.previews = {}  # percorso -> immagine Pillow (o None se non leggibile)
-        self._fonts()
-        self._styles()
         self._build()
         dark_title_bar(self)
         self.deiconify()
@@ -563,23 +420,9 @@ class App(tk.Tk):
             self.after(150, self.refresh)
         else:
             self.set_status("info", t("st_choose"))
-
-    def _fonts(self):
-        family = "Segoe UI Variable Text" if "Segoe UI Variable Text" in tkfont.families() else "Segoe UI"
-        self.f_title = tkfont.Font(family=family, size=18, weight="bold")
-        self.f_body = tkfont.Font(family=family, size=10)
-        self.f_small = tkfont.Font(family=family, size=9)
-        self.f_strong = tkfont.Font(family=family, size=11, weight="bold")
-        self.f_stat = tkfont.Font(family=family, size=20, weight="bold")
-
-    def _styles(self):
-        st = ttk.Style(self)
-        st.configure("Muted.TLabel", foreground=MUTED, font=self.f_small)
-        st.configure("Title.TLabel", font=self.f_title)
-        st.configure("Strong.TLabel", font=self.f_strong)
-        st.configure("Stat.TLabel", font=self.f_stat)
-        st.configure("Treeview", rowheight=30, font=self.f_body)
-        st.configure("Treeview.Heading", font=self.f_small)
+        if self.settings.get("check_updates", True) and \
+                time.time() - self.settings.get("last_update_check", 0) > UPDATE_EVERY:
+            self.after(2500, self.check_updates)
 
     def _build(self):
         """Costruisce tutta la finestra nella lingua corrente (si richiama quando la lingua cambia)."""
@@ -590,6 +433,9 @@ class App(tk.Tk):
         head = ttk.Frame(outer)
         head.pack(fill="x")
         ttk.Button(head, text="⚙  " + t("settings"), command=self.open_settings).pack(side="right", anchor="n")
+        self.btn_update = ttk.Button(head, style="Accent.TButton", command=self.offer_update)
+        if self.release:
+            self.show_update_button()
         ttk.Label(head, text=APP_NAME, style="Title.TLabel").pack(anchor="w")
         ttk.Label(head, text=t("subtitle"), style="Muted.TLabel").pack(anchor="w", pady=(2, 0))
 
@@ -709,6 +555,75 @@ class App(tk.Tk):
             self.btn_refresh.state(["!disabled"])
             self.config(cursor="")
 
+    # ---- aggiornamenti
+
+    def check_updates(self, manual=False, parent=None):
+        """Chiede a GitHub l'ultima release in background; manual=True mostra anche "nessun aggiornamento"."""
+        def work():
+            try:
+                release, error = updater.latest_release(), None
+            except Exception as e:  # noqa: BLE001 — rete assente, GitHub non raggiungibile…
+                release, error = None, e
+            self.after(0, self._update_checked, release, error, manual, parent)
+        threading.Thread(target=work, daemon=True).start()
+
+    def _update_checked(self, release, error, manual, parent):
+        if not error:
+            self.settings["last_update_check"] = time.time()
+            save_settings(self.settings)
+        if release and updater.is_newer(release["version"]):
+            self.release = release
+            self.show_update_button()
+            if manual:
+                self.offer_update(parent)
+        elif manual:
+            owner = parent if parent is not None and parent.winfo_exists() else self
+            if error:
+                Dialog.ask(owner, t("updates_label"), t("upd_check_failed", error=error), None, level="warn")
+            else:
+                Dialog.ask(owner, t("updates_label"), t("upd_none", version=VERSION), None, level="ok")
+
+    def show_update_button(self):
+        self.btn_update.configure(text="⬆  " + t("upd_button", version=self.release["version"]))
+        self.btn_update.pack(side="right", anchor="n", padx=(0, 8))
+
+    def offer_update(self, parent=None):
+        rel = self.release
+        if not rel:
+            return
+        owner = parent if parent is not None and parent.winfo_exists() else self
+        notes = "\n".join(rel["notes"].splitlines()[:14]) or None
+        answer = Dialog.ask(owner, t("upd_title"), t("upd_head", version=rel["version"]),
+                            t("upd_body", current=VERSION), level="info", detail=notes,
+                            buttons=[("later", t("btn_later"), False), ("update", t("btn_update_now"), True)])
+        if answer != "update":
+            return
+        if isinstance(owner, tk.Toplevel):
+            owner.destroy()
+        self.set_busy(True, t("upd_downloading", percent=0))
+
+        def progress(done, total):
+            percent = int(done * 100 / total) if total else 0
+            self.after(0, lambda: self.set_status("info", t("upd_downloading", percent=percent)))
+
+        def work():
+            try:
+                path = updater.download(rel, progress)
+                self.after(0, self._update_downloaded, path, None)
+            except Exception as e:  # noqa: BLE001
+                self.after(0, self._update_downloaded, None, e)
+        threading.Thread(target=work, daemon=True).start()
+
+    def _update_downloaded(self, path, error):
+        self.set_busy(False)
+        if error:
+            Dialog.ask(self, t("upd_title"), t("upd_error", error=error), None, level="error")
+            self.refresh() if is_library(self.settings.get("library")) else self.set_status("info", t("st_choose"))
+            return
+        log(f"update {VERSION} -> {self.release['version']}: {path}")
+        updater.launch_installer(path)
+        self.destroy()  # l'installazione sostituisce i file dell'app: deve trovarla chiusa
+
     # ---- azioni
 
     def open_settings(self):
@@ -719,10 +634,9 @@ class App(tk.Tk):
 
     def apply_settings(self):
         """Dopo il salvataggio delle impostazioni: se la lingua è cambiata, ricostruisce la finestra."""
-        global LANG
-        before = LANG
-        LANG = resolve_language(self.settings.get("language"))
-        if LANG != before:
+        before = i18n.LANG
+        i18n.set_language(self.settings.get("language"))
+        if i18n.LANG != before:
             self.outer.destroy()
             self._build()
             self.title(APP_NAME)
@@ -864,7 +778,7 @@ class App(tk.Tk):
         if item.get("captured"):
             try:
                 when = datetime.datetime.fromisoformat(item["captured"][:19])
-                lines.append(t("taken", date=when.strftime(DATE_FORMATS.get(LANG, "%d/%m/%Y")),
+                lines.append(t("taken", date=when.strftime(DATE_FORMATS.get(i18n.LANG, "%d/%m/%Y")),
                                time=when.strftime("%H:%M")))
             except ValueError:
                 pass
@@ -938,10 +852,7 @@ class App(tk.Tk):
 
 
 def main():
-    try:
-        ctypes.windll.shcore.SetProcessDpiAwareness(1)
-    except (AttributeError, OSError):
-        pass
+    dpi_aware()
     App().mainloop()
 
 

@@ -1,11 +1,14 @@
-"""Build dell'eseguibile e dell'installer MSI di CleanCraftNas con cx_Freeze.
+"""Build dell'MSI di CleanCraftNas con cx_Freeze (l'installazione guidata lo incorpora: vedi build.ps1).
 
     .venv\\Scripts\\python.exe setup.py bdist_msi
 
 L'MSI contiene Python, Tk, sv_ttk e Pillow: sul PC di destinazione non serve installare altro.
-Si installa per l'utente corrente (niente permessi di amministratore). L'installazione chiede la cartella
-(predefinita %LOCALAPPDATA%\\Programs\\CleanCraftNas) e la lingua, e crea i collegamenti nel menu Start e
-sul Desktop. Senza interfaccia la lingua si passa così: msiexec /i CleanCraftNas-x.y.z.msi CCN_LANGUAGE=en
+Si installa per l'utente corrente (niente permessi di amministratore), di default in
+%LOCALAPPDATA%\\Programs\\CleanCraftNas. Proprietà utili per un'installazione senza interfaccia:
+    msiexec /i CleanCraftNas-x.y.z.msi /qn CCN_LANGUAGE=en CCN_DESKTOP=0 TARGETDIR="D:\\Apps\\CleanCraftNas"
+
+Aggiornamenti: tutte le versioni condividono UPGRADE_CODE. Un MSI più nuovo toglie quello installato
+(anche se ha la stessa versione); uno più vecchio si rifiuta di partire invece di declassare l'app.
 """
 
 import re
@@ -18,47 +21,71 @@ from cx_Freeze.command.bdist_msi import bdist_msi
 ROOT = Path(__file__).parent
 sys.path.insert(0, str(ROOT / "src"))
 from translations import LANGUAGES  # noqa: E402
+from version import APP_NAME, REG_KEY, UPGRADE_CODE, VERSION  # noqa: E402
 
-VERSION = re.search(r'^VERSION = "(.+)"', (ROOT / "src" / "cleancraftnas.py").read_text(encoding="utf-8"), re.M)[1]
-NAME = "CleanCraftNas"
 EXE = "CleanCraftNas.exe"
 ICON = str(ROOT / "assets" / "icon.ico")
 DESCRIPTION = "Deletes from disk the photos in Lightcraft's trash and empties it"
-# non cambiarlo mai: è ciò che permette a una nuova versione di sostituire quella installata
-# (anche le versioni 1.0–1.1, che si chiamavano "Pulizia cestino Lightcraft")
-UPGRADE_CODE = "{A12F739D-0076-4137-9AA2-477F6CC22D4C}"
+DESKTOP_COMPONENT_GUID = "{BEF6FC75-83C7-4047-AFE1-BAB2273C6D62}"  # fisso: identifica il collegamento tra le versioni
 
 shortcuts = [
     # (Shortcut, Directory_, Name, Component_, Target, Arguments, Description, Hotkey, Icon_, IconIndex, ShowCmd, WkDir)
-    ("StartMenuShortcut", "ProgramMenuFolder", f"CLEANCR|{NAME}", "TARGETDIR", f"[TARGETDIR]{EXE}", None,
+    ("StartMenuShortcut", "ProgramMenuFolder", f"CLEANCR|{APP_NAME}", "TARGETDIR", f"[TARGETDIR]{EXE}", None,
      DESCRIPTION, None, None, None, None, "TARGETDIR"),
-    ("DesktopShortcut", "DesktopFolder", f"CLEANCR|{NAME}", "TARGETDIR", f"[TARGETDIR]{EXE}", None,
+    ("DesktopShortcut", "DesktopFolder", f"CLEANCR|{APP_NAME}", "DesktopShortcutComp", f"[TARGETDIR]{EXE}", None,
      DESCRIPTION, None, None, None, None, "TARGETDIR"),
 ]
 
 
-class BdistMsiWithLanguage(bdist_msi):
-    """L'MSI di cx_Freeze con una pagina in più, dopo la scelta della cartella, per la lingua dell'app.
+def run_sql(db, sql):
+    view = db.OpenView(sql)
+    view.Execute(None)
+    view.Close()
 
-    La scelta finisce in HKCU\\Software\\CleanCraftNas\\Language; l'app la usa finché l'utente non sceglie
-    un'altra lingua nelle Impostazioni.
-    """
+
+class CleanCraftNasMsi(bdist_msi):
+    """L'MSI di cx_Freeze con: pagina per la lingua, collegamento sul Desktop facoltativo, niente declassamenti."""
 
     def add_config(self):
         super().add_config()
-        db = self.db
         from msilib import add_data
 
-        add_data(db, "Property", [("CCN_LANGUAGE", "auto")])
-        view = db.OpenView("UPDATE `Property` SET `Value`='TARGETDIR;REINSTALLMODE;CCN_LANGUAGE' "
-                           "WHERE `Property`='SecureCustomProperties'")
-        view.Execute(None)
-        view.Close()
+        db = self.db
+        add_data(db, "Property", [("CCN_LANGUAGE", "auto"), ("CCN_DESKTOP", "1"),
+                                  ("ARPNOMODIFY", "1"), ("ARPNOREPAIR", "1")])
+        run_sql(db, "UPDATE `Property` SET `Value`='TARGETDIR;REINSTALLMODE;CCN_LANGUAGE;CCN_DESKTOP;"
+                    "REMOVEOLDVERSION;NEWERVERSIONDETECTED' WHERE `Property`='SecureCustomProperties'")
+        # lingua scelta: la legge l'app finché l'utente non ne sceglie un'altra nelle Impostazioni
         choices = [("auto", "Automatic (Windows language)")] + list(LANGUAGES.items())
         add_data(db, "ComboBox", [("CCN_LANGUAGE", i + 1, code, label) for i, (code, label) in enumerate(choices)])
-        add_data(db, "Registry", [("RegLanguage", 1, r"Software\CleanCraftNas", "Language", "[CCN_LANGUAGE]",
-                                   "TARGETDIR")])
+        add_data(db, "Registry", [
+            ("RegLanguage", 1, REG_KEY, "Language", "[CCN_LANGUAGE]", "TARGETDIR"),
+            ("RegDesktop", 1, REG_KEY, "DesktopShortcut", "#1", "DesktopShortcutComp"),
+        ])
+        # collegamento sul Desktop in un componente a parte, installato solo se CCN_DESKTOP=1
+        add_data(db, "Component", [("DesktopShortcutComp", DESKTOP_COMPONENT_GUID, "TARGETDIR", 4,
+                                    'CCN_DESKTOP="1"', "RegDesktop")])
+        add_data(db, "FeatureComponents", [("default", "DesktopShortcutComp")])
+        # la cartella di installazione finisce in Impostazioni › App e serve all'installazione guidata per gli aggiornamenti
+        add_data(db, "CustomAction", [("A_SET_ARP_LOCATION", 51, "ARPINSTALLLOCATION", "[TARGETDIR]")])
+        add_data(db, "InstallExecuteSequence", [("A_SET_ARP_LOCATION", None, 1001)])
         add_data(db, "InstallUISequence", [("LanguageDlg", "not Installed", 1235)])
+        add_data(db, "LaunchCondition", [("NOT NEWERVERSIONDETECTED OR Installed",
+                                          f"A newer version of {APP_NAME} is already installed.")])
+        # le versioni installate vanno cercate prima delle LaunchConditions (100), che altrimenti non vedrebbero
+        # NEWERVERSIONDETECTED: nelle tabelle standard di msilib FindRelatedProducts sta a 200
+        for table in ("InstallExecuteSequence", "InstallUISequence"):
+            run_sql(db, f"UPDATE `{table}` SET `Sequence`=25 WHERE `Action`='FindRelatedProducts'")
+
+    def add_upgrade_config(self, sversion):
+        from msilib import add_data
+
+        add_data(self.db, "Upgrade", [
+            # versioni più vecchie e stessa versione (un'altra build): vengono rimosse prima di installare
+            (self.upgrade_code, None, sversion, None, 512 | 1, None, "REMOVEOLDVERSION"),
+            # versioni più nuove: solo rilevate, e la LaunchCondition ferma l'installazione
+            (self.upgrade_code, sversion, None, None, 2, None, "NEWERVERSIONDETECTED"),
+        ])
 
     def add_ui(self):
         super().add_ui()
@@ -81,28 +108,29 @@ class BdistMsiWithLanguage(bdist_msi):
 
 
 setup(
-    name=NAME,
+    name=APP_NAME,
     version=VERSION,
     description=DESCRIPTION,
     author="poty87",
     url="https://github.com/poty87/CleanCraftNas",
-    cmdclass={"bdist_msi": BdistMsiWithLanguage},
+    cmdclass={"bdist_msi": CleanCraftNasMsi},
     options={
         "build_exe": {
             "packages": ["sv_ttk", "tkinter", "PIL"],
             "include_files": [(ICON, "assets/icon.ico")],
-            "excludes": ["unittest", "pydoc", "email", "http", "xmlrpc"],
+            # http ed email servono a urllib per il controllo degli aggiornamenti
+            "excludes": ["unittest", "pydoc", "xmlrpc"],
             "include_msvcr": True,
         },
         "bdist_msi": {
             "upgrade_code": UPGRADE_CODE,
             "all_users": False,
-            "initial_target_dir": rf"[LocalAppDataFolder]Programs\{NAME}",
+            "initial_target_dir": rf"[LocalAppDataFolder]Programs\{APP_NAME}",
             "install_icon": ICON,
             "add_to_path": False,
             "output_name": f"CleanCraftNas-{VERSION}.msi",
             "data": {"Shortcut": shortcuts},
-            "summary_data": {"author": "poty87", "comments": f"{NAME} installer"},
+            "summary_data": {"author": "poty87", "comments": f"{APP_NAME} installer"},
         },
     },
     executables=[Executable(str(ROOT / "src" / "cleancraftnas.py"), base="gui", target_name=EXE, icon=ICON)],

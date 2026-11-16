@@ -64,20 +64,54 @@ CleanCraftNas then:
 
 ## Install
 
-Download `CleanCraftNas-x.y.z.msi` from [Releases](https://github.com/poty87/CleanCraftNas/releases/latest) and run it.
+Download **`CleanCraftNas-Setup-x.y.z.exe`** from [Releases](https://github.com/poty87/CleanCraftNas/releases/latest) and run it.
 
+![Setup](docs/setup-welcome.png)
+
+- The setup has the same look as the app and walks you through **language**, **license**, **folder** (default
+  `%LOCALAPPDATA%\Programs\CleanCraftNas`) and an optional **Desktop shortcut**, with a real progress bar.
 - **Everything is included** (Python, Tk, Pillow…): nothing else needs to be installed, and an existing Python on your PC is
   neither used nor touched.
-- It installs **for your user only**, without administrator rights. You choose the **folder** (default
-  `%LOCALAPPDATA%\Programs\CleanCraftNas`) and the **language**; shortcuts are created in the Start menu and on the Desktop.
-- A newer MSI replaces the installed version. Uninstall from *Settings › Apps*.
-- Silent install: `msiexec /i CleanCraftNas-x.y.z.msi /qn CCN_LANGUAGE=en` (`auto`, `it`, `en`, `de`, `es`, `fr`, `pt`).
+- It installs **for your user only**, without administrator rights.
+- Run it again to **reinstall** (repair) or **uninstall**; you can also uninstall from *Settings › Apps*. Your settings and log
+  are kept.
 
 On first start click **Change library…** and pick the LightCraft library folder (the one containing `catalog.snap`).
 CleanCraftNas remembers it.
 
 **Requirements:** Windows 10 or 11 (64-bit) and LightCraft installed (CleanCraftNas uses its `lightcraft-cli.exe`; if it is not
 in the usual place, `%LOCALAPPDATA%\Programs\ArtCraft\LightCraft`, you can point to it in **Settings**).
+
+<details>
+<summary>Silent install and plain MSI (for scripts and IT)</summary>
+
+```powershell
+CleanCraftNas-Setup-x.y.z.exe --silent [--dir "D:\Apps\CleanCraftNas"] [--lang en] [--no-desktop]
+CleanCraftNas-Setup-x.y.z.exe --silent --uninstall
+```
+
+The release also has the plain `CleanCraftNas-x.y.z.msi` (the setup contains the same package):
+
+```powershell
+msiexec /i CleanCraftNas-x.y.z.msi /qn CCN_LANGUAGE=en CCN_DESKTOP=0 TARGETDIR="D:\Apps\CleanCraftNas"
+```
+
+`CCN_LANGUAGE`: `auto`, `it`, `en`, `de`, `es`, `fr`, `pt`. `CCN_DESKTOP`: `1` (default) or `0`.
+</details>
+
+## Updates
+
+- CleanCraftNas checks GitHub for a new release at startup (at most every 12 hours; it only asks which version was released
+  last). When there is one, an **Update** button appears: it downloads the new setup, checks its size and SHA-256 and starts
+  it, and the setup updates the app in place, keeping folder, language and settings. You can turn the check off, or run it by
+  hand, in **⚙ Settings**.
+- You can also just download and run a newer setup: it recognises the installed version and offers **Update**.
+
+![Update](docs/setup-update.png)
+
+- All versions share the same MSI *UpgradeCode*: a newer package always removes the older one first, so you never end up with
+  two copies. Installing an **older** version over a newer one is **refused** (the setup says so; the MSI stops with *"A newer
+  version of CleanCraftNas is already installed"*), so you can't downgrade by mistake.
 
 ## Languages
 
@@ -150,19 +184,30 @@ recovered from the `#recycle` folder of the share for a while.
 ```powershell
 git clone https://github.com/poty87/CleanCraftNas.git
 cd CleanCraftNas
-powershell -ExecutionPolicy Bypass -File build.ps1     # creates dist\CleanCraftNas-x.y.z.msi
+powershell -ExecutionPolicy Bypass -File build.ps1     # creates dist\CleanCraftNas-x.y.z.msi and CleanCraftNas-Setup-x.y.z.exe
 ```
 
 `build.ps1` creates a virtual environment with Python 3.13 and the pinned build tools (`requirements-build.txt`: cx_Freeze,
-sv_ttk, Pillow). To try the app without building: `.venv\Scripts\python.exe src\cleancraftnas.py`.
-`tools\make_demo.py` creates a LightCraft library with synthetic photos for testing (it never touches real photos).
+PyInstaller, sv_ttk, Pillow), builds the MSI with cx_Freeze and then the setup with PyInstaller, embedding the MSI. To try the
+app without building: `.venv\Scripts\python.exe src\cleancraftnas.py`. `tools\make_demo.py` creates a LightCraft library with
+synthetic photos for testing (it never touches real photos).
+
+To release a new version: raise `VERSION` in `src/version.py`, run `build.ps1`, and attach both files from `dist\` to a GitHub
+release tagged `vX.Y.Z`. Installed apps find it through the GitHub API. Never change `UPGRADE_CODE`.
 
 | Path | Content |
 |---|---|
 | `src/cleancraftnas.py` | the application |
-| `src/translations.py` | interface texts in every language |
-| `setup.py`, `build.ps1` | MSI build (cx_Freeze), with the extra installer page for the language |
+| `src/setup_wizard.py` | the setup (drives Windows Installer through `msi.dll`) |
+| `src/updater.py` | update check and download |
+| `src/ui_theme.py`, `src/i18n.py`, `src/translations.py` | shared look, language handling, texts in every language |
+| `src/version.py` | name, version, repository, MSI upgrade code |
+| `setup.py`, `build.ps1` | MSI build (cx_Freeze) and setup build (PyInstaller) |
 | `tools/` | icon, demo library, NAS connection script |
+
+## License
+
+[MIT](LICENSE) © 2026 poty87
 
 ---
 
@@ -202,12 +247,26 @@ condivisa) e quelli sul PC nel **Cestino di Windows**; ogni operazione è annota
 
 ### Installazione
 
-Scarica `CleanCraftNas-x.y.z.msi` dalle [Release](https://github.com/poty87/CleanCraftNas/releases/latest) e avvialo. Contiene
-già tutto (Python incluso), si installa solo per il tuo utente senza permessi di amministratore e ti fa scegliere **cartella** e
-**lingua**. Al primo avvio premi **Cambia libreria…** e scegli la cartella della libreria LightCraft (quella con
-`catalog.snap`). Serve LightCraft installato (l'app usa il suo `lightcraft-cli.exe`).
+Scarica **`CleanCraftNas-Setup-x.y.z.exe`** dalle [Release](https://github.com/poty87/CleanCraftNas/releases/latest) e
+avvialo. L'installazione ha la stessa grafica dell'app e ti fa scegliere **lingua**, **cartella** e se creare il
+**collegamento sul Desktop**. Contiene già tutto (Python incluso) e si installa solo per il tuo utente, senza permessi di
+amministratore. Rilanciandola puoi **reinstallare** o **disinstallare**. Al primo avvio premi **Cambia libreria…** e scegli
+la cartella della libreria LightCraft (quella con `catalog.snap`). Serve LightCraft installato (l'app usa il suo
+`lightcraft-cli.exe`).
 
 Lingue: italiano, inglese, tedesco, spagnolo, francese, portoghese; si cambiano quando vuoi da **⚙ Impostazioni**.
+
+### Aggiornamenti
+
+All'avvio CleanCraftNas chiede a GitHub se è uscita una versione nuova (al massimo ogni 12 ore). Se c'è, compare il pulsante
+**Aggiornamento**: scarica la nuova installazione, ne verifica dimensione e SHA-256 e la avvia; l'aggiornamento mantiene
+cartella, lingua e impostazioni. Il controllo si può disattivare o lanciare a mano da **⚙ Impostazioni**. Puoi anche
+scaricare tu la nuova installazione: riconosce la versione presente e propone **Aggiorna**. Una versione più vecchia non può
+sostituirne una più nuova: l'installazione lo rifiuta, così non si torna indietro per sbaglio.
+
+### Licenza
+
+[MIT](LICENSE).
 
 ### Configurare il NAS
 
