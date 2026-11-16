@@ -1,0 +1,231 @@
+<p align="center"><img src="assets/icon.png" width="96" alt=""></p>
+
+<h1 align="center">CleanCraftNas</h1>
+
+<p align="center">
+Delete from disk the photos you put in <b>Lightcraft</b>'s trash — even when they live on a NAS — and keep the trash in sync.<br>
+<a href="#-italiano">🇮🇹 Italiano</a> · <a href="https://github.com/poty87/CleanCraftNas/releases/latest">⬇ Download</a>
+</p>
+
+![CleanCraftNas main window](docs/main.png)
+
+> CleanCraftNas is an independent tool. It is not made by, affiliated with or endorsed by the authors of
+> [LightCraft](https://github.com/storytold/lightcraft).
+
+## Why it exists
+
+[LightCraft](https://github.com/storytold/lightcraft) can work with photos **in place**: when you add a folder (for example a
+folder on a Synology NAS mapped as `Y:`), the library only *references* the files and never moves them.
+
+That is great until you want to get rid of a photo. In LightCraft (checked on version 0.21.1):
+
+| Command | What happens to the library | What happens to the file on disk |
+|---|---|---|
+| **Delete Photo** (`Delete` key) | the photo goes to **Recently Deleted** (the trash) | stays |
+| **Empty Recently Deleted** | the photos are removed from the library | **stay** |
+| **Delete Permanently** | the photo is removed from the library | **stays** |
+
+LightCraft only deletes files it owns (photos *copied* into the library's `Originals` folder). For photos that live on your
+NAS there is no way to delete the file: you end up with a clean library and a NAS full of photos you threw away, and you
+would have to find and delete each file by hand.
+
+## How it works
+
+CleanCraftNas uses **LightCraft's trash as the list of what to delete**:
+
+1. In LightCraft, press `Delete` on the photos you don't want. They move to **Recently Deleted**.
+2. Close LightCraft.
+3. Open CleanCraftNas. It reads the library and lists every photo in the trash, with a **preview** (click a row; double-click
+   to enlarge), the file, its folder and its size.
+4. Click **Delete from disk and empty the trash** and confirm.
+
+![Confirmation dialog](docs/confirm.png)
+
+CleanCraftNas then:
+
+1. **backs up the library** (`catalog.snap`, `catalog.log`, `view.json`) into a `CleanCraftNas backup - <library>` folder next
+   to it, keeping the last 5;
+2. **deletes the files of the photos in the trash**, together with the files of the same shot that sit next to them with the
+   same name: the **JPG** of a RAW+JPG pair and the **XMP** sidecar;
+3. **empties LightCraft's trash** by running LightCraft's own command (`lightcraft-cli photo.deletePermanently`) on exactly the
+   photos whose files were deleted. The library files are never edited by hand.
+
+![Cleanup complete](docs/done.png)
+
+### Safety
+
+- It **refuses to run while LightCraft is open** (app or `lightcraft-cli`), and checks again right before deleting.
+- A file is **never deleted if a photo still in the library uses it** (for example the original of a virtual copy you
+  trashed).
+- Deletions are recoverable for a while: files on a **NAS** go to the **Synology recycle bin** (`#recycle`, if it is enabled on
+  the shared folder), files on the **PC** go to the **Windows Recycle Bin**.
+- If a file can't be deleted, its photo **stays in the trash** and the error is shown and logged.
+- Every operation is written to a log (`%LOCALAPPDATA%\CleanCraftNas\cleancraftnas.log`, button **Open log**).
+
+## Install
+
+Download `CleanCraftNas-x.y.z.msi` from [Releases](https://github.com/poty87/CleanCraftNas/releases/latest) and run it.
+
+- **Everything is included** (Python, Tk, Pillow…): nothing else needs to be installed, and an existing Python on your PC is
+  neither used nor touched.
+- It installs **for your user only**, without administrator rights. You choose the **folder** (default
+  `%LOCALAPPDATA%\Programs\CleanCraftNas`) and the **language**; shortcuts are created in the Start menu and on the Desktop.
+- A newer MSI replaces the installed version. Uninstall from *Settings › Apps*.
+- Silent install: `msiexec /i CleanCraftNas-x.y.z.msi /qn CCN_LANGUAGE=en` (`auto`, `it`, `en`, `de`, `es`, `fr`, `pt`).
+
+On first start click **Change library…** and pick the LightCraft library folder (the one containing `catalog.snap`).
+CleanCraftNas remembers it.
+
+**Requirements:** Windows 10 or 11 (64-bit) and LightCraft installed (CleanCraftNas uses its `lightcraft-cli.exe`; if it is not
+in the usual place, `%LOCALAPPDATA%\Programs\ArtCraft\LightCraft`, you can point to it in **Settings**).
+
+## Languages
+
+Italiano, English, Deutsch, Español, Français, Português. The language is chosen during installation (or follows Windows) and
+can be changed at any time in **⚙ Settings**, without restarting.
+
+![Settings](docs/settings.png)
+
+## NAS setup
+
+LightCraft and Lightroom find each photo by its **path**. With a NAS, how you connect it matters as much as the NAS itself.
+
+### 1. Map the share as a drive letter
+
+Map the shared folder to a fixed letter and always use that letter when adding folders to LightCraft (and Lightroom):
+
+```powershell
+net use Y: \\NAS-NAME\Photos /persistent:no
+```
+
+If the letter changes, or you use a mapped letter on one day and a `\\NAS\…` path on another, the library will show the photos
+as missing.
+
+### 2. Save the password once
+
+Save the NAS password in Windows Credential Manager, with the **plain user name** (no `NAS-NAME\` in front):
+
+```powershell
+cmdkey /add:NAS-NAME /user:youruser /pass
+```
+
+`/pass` without a value asks for the password, so it is never written in a script.
+
+### 3. Reconnect at every logon
+
+Windows often tries to restore network drives before the network is ready, and then asks for the password again or shows
+*"Multiple connections to a server or shared resource by the same user, using more than one user name, are not allowed"*
+(error 1219). [`tools/connect-nas.ps1`](tools/connect-nas.ps1) avoids both: it waits for the NAS, closes any leftover
+connection to it and maps the drive with the saved password. Copy it to a folder of yours (for example `C:\Tools`) and run it
+at every logon with Task Scheduler:
+
+```powershell
+$args = '--headless powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Tools\connect-nas.ps1" -Drive Y: -Share \\NAS-NAME\Photos'
+$action  = New-ScheduledTaskAction -Execute "$env:SystemRoot\System32\conhost.exe" -Argument $args
+$trigger = New-ScheduledTaskTrigger -AtLogOn -User "$env:USERDOMAIN\$env:USERNAME"
+$trigger.Delay = 'PT15S'
+Register-ScheduledTask -TaskName 'Connect NAS' -Action $action -Trigger $trigger `
+    -Principal (New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" -LogonType Interactive)
+```
+
+### 4. Choose a safe name for the NAS
+
+Use only **letters, digits and hyphens** in the NAS name (for example `NAS-HOME`), at most 15 characters. Avoid the
+**underscore** (`_`), spaces and accented or special characters: they are not valid in network host names and some programs
+handle them badly. With a NAS named `MY_NAS`, Lightroom Classic listed the photos but failed to import them with "file not
+found", while Windows Explorer opened them fine; the same photos imported at once through the NAS IP address, and after
+renaming the NAS to `MY-NAS`.
+
+If you rename the NAS (Synology: *Control Panel › Network › General › Server name*), update everything that used the old
+name: the mapped drive, the saved password (`cmdkey`), and the folders in your libraries (Lightroom: *Update Folder
+Location*; LightCraft: *Find Missing Photos* / *Locate Photo*).
+
+### 5. Turn on the Synology recycle bin
+
+In DSM, *Control Panel › Shared Folder › Edit › Enable Recycle Bin*. Then the files CleanCraftNas deletes can still be
+recovered from the `#recycle` folder of the share for a while.
+
+## Build from source
+
+```powershell
+git clone https://github.com/poty87/CleanCraftNas.git
+cd CleanCraftNas
+powershell -ExecutionPolicy Bypass -File build.ps1     # creates dist\CleanCraftNas-x.y.z.msi
+```
+
+`build.ps1` creates a virtual environment with Python 3.13 and the pinned build tools (`requirements-build.txt`: cx_Freeze,
+sv_ttk, Pillow). To try the app without building: `.venv\Scripts\python.exe src\cleancraftnas.py`.
+`tools\make_demo.py` creates a LightCraft library with synthetic photos for testing (it never touches real photos).
+
+| Path | Content |
+|---|---|
+| `src/cleancraftnas.py` | the application |
+| `src/translations.py` | interface texts in every language |
+| `setup.py`, `build.ps1` | MSI build (cx_Freeze), with the extra installer page for the language |
+| `tools/` | icon, demo library, NAS connection script |
+
+---
+
+## 🇮🇹 Italiano
+
+**CleanCraftNas** cancella dal disco le foto che hai messo nel cestino di **LightCraft**, anche quando si trovano su un NAS, e
+poi svuota il cestino, così libreria e disco restano allineati.
+
+### Perché serve
+
+LightCraft lavora con le foto **dove si trovano**: se aggiungi una cartella del NAS (per esempio montata come `Y:`), la libreria
+si limita a fare riferimento ai file. Quando però vuoi eliminare una foto (verificato sulla versione 0.21.1):
+
+- **Delete Photo** (tasto `Canc`) sposta la foto nel cestino (*Recently Deleted*);
+- **Empty Recently Deleted** e **Delete Permanently** la tolgono dalla libreria, **ma il file sul NAS resta**.
+
+LightCraft cancella solo i file copiati dentro la propria libreria. Per le foto sul NAS non c'è modo di eliminare il file:
+la libreria si svuota, il NAS resta pieno di foto scartate e bisognerebbe cancellarle una per una.
+
+### Come funziona
+
+CleanCraftNas usa **il cestino di LightCraft come elenco di ciò che va cancellato**:
+
+1. in LightCraft premi `Canc` sulle foto da eliminare: finiscono nel cestino;
+2. chiudi LightCraft;
+3. apri CleanCraftNas: mostra tutte le foto nel cestino con **anteprima** (clic su una riga, doppio clic per ingrandire), file,
+   cartella e dimensione;
+4. premi **Cancella dal disco e svuota il cestino** e conferma.
+
+L'app allora **fa un backup della libreria**, **cancella i file** delle foto nel cestino (con il JPG dello stesso scatto e
+l'XMP accanto) e **svuota il cestino di LightCraft** con il comando ufficiale di LightCraft, solo per le foto i cui file sono
+stati davvero cancellati.
+
+Protezioni: non parte se LightCraft è aperto; non cancella mai un file usato da una foto ancora in libreria (per esempio
+l'originale di una copia virtuale); i file sul NAS finiscono nel **cestino di Synology** (`#recycle`, se attivo sulla cartella
+condivisa) e quelli sul PC nel **Cestino di Windows**; ogni operazione è annotata nel registro.
+
+### Installazione
+
+Scarica `CleanCraftNas-x.y.z.msi` dalle [Release](https://github.com/poty87/CleanCraftNas/releases/latest) e avvialo. Contiene
+già tutto (Python incluso), si installa solo per il tuo utente senza permessi di amministratore e ti fa scegliere **cartella** e
+**lingua**. Al primo avvio premi **Cambia libreria…** e scegli la cartella della libreria LightCraft (quella con
+`catalog.snap`). Serve LightCraft installato (l'app usa il suo `lightcraft-cli.exe`).
+
+Lingue: italiano, inglese, tedesco, spagnolo, francese, portoghese; si cambiano quando vuoi da **⚙ Impostazioni**.
+
+### Configurare il NAS
+
+1. **Monta la cartella condivisa con una lettera fissa** (per esempio `net use Y: \\NOME-NAS\Foto /persistent:no`) e usa
+   sempre quella lettera quando aggiungi cartelle a LightCraft o Lightroom: le librerie ritrovano le foto in base al percorso.
+2. **Salva la password una volta**, con il solo nome utente: `cmdkey /add:NOME-NAS /user:tuoutente /pass`.
+3. **Ricollega l'unità a ogni accesso** con [`tools/connect-nas.ps1`](tools/connect-nas.ps1) e l'Utilità di pianificazione
+   (comando nella sezione inglese *NAS setup*, punto 3). Lo script aspetta che il NAS risponda, chiude eventuali connessioni
+   rimaste aperte (che causano l'errore 1219, *"connessioni multiple ad un server … con più di un nome utente non sono
+   consentite"*) e monta l'unità con la password salvata, senza richiederla a ogni riavvio.
+4. **Dai al NAS un nome sicuro:** solo lettere, numeri e trattino (per esempio `NAS-CASA`), al massimo 15 caratteri. Evita il
+   **trattino basso** (`_`), gli spazi e i caratteri accentati o speciali: non sono validi nei nomi di rete e alcuni programmi li
+   gestiscono male. Con un NAS chiamato `MY_NAS` Lightroom Classic vedeva le foto ma non riusciva a importarle ("file non
+   trovato"), mentre funzionava subito usando l'indirizzo IP del NAS o dopo averlo rinominato `MY-NAS`. Se rinomini il NAS,
+   aggiorna unità di rete, password salvata e cartelle delle librerie (Lightroom: *Aggiorna posizione cartella*; LightCraft:
+   *Find Missing Photos* / *Locate Photo*).
+5. **Attiva il cestino di Synology** sulla cartella condivisa (*Pannello di controllo › Cartella condivisa › Modifica › Attiva
+   Cestino*), così i file cancellati restano recuperabili per un po'.
+
+> CleanCraftNas è uno strumento indipendente, non realizzato né approvato dagli autori di LightCraft. Cancella file: tieni
+> sempre un backup delle tue foto.
