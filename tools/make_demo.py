@@ -45,7 +45,12 @@ def landscape(path, seed):
             x += rnd.randint(180, 420)
         pts += [(w, base), (w, h)]
         d.polygon(pts, fill=shade)
-    img.filter(ImageFilter.GaussianBlur(2)).save(path, quality=88)
+    # EXIF inventati, per avere fotocamera e autore nelle colonne dell'elenco
+    exif = Image.Exif()
+    exif[0x010F], exif[0x0110] = "Demo Optics", ("Demo Optics Z1" if seed % 2 else "Demo Optics Mini")
+    if seed % 3:
+        exif[0x013B] = "Demo Author"
+    img.filter(ImageFilter.GaussianBlur(2)).save(path, quality=88, exif=exif)
 
 
 def main():

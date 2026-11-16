@@ -135,6 +135,15 @@ def camera_name(meta):
     return camera
 
 
+def file_times(path):
+    """(creazione, ultima modifica) del file in secondi, oppure (None, None) se non c'è."""
+    try:
+        st = os.stat(path)
+        return st.st_ctime, st.st_mtime  # su Windows st_ctime è la data di creazione
+    except (OSError, TypeError, ValueError):
+        return None, None
+
+
 def build_plan(lib):
     """Elenca le foto nel cestino e i file da cancellare per ciascuna."""
     cat = read_catalog(lib)
@@ -153,6 +162,8 @@ def build_plan(lib):
         meta = p.get("meta") or {}
         item = {"id": int(p["id"]), "name": p.get("file_name") or "", "path": path, "files": [], "note": None,
                 "captured": p.get("captured"), "camera": camera_name(meta),
+                # l'autore sta nel campo "creator"; molte fotocamere scrivono il nome solo nel copyright
+                "author": (meta.get("creator") or meta.get("copyright") or "").strip(),
                 "size_px": (p.get("width"), p.get("height")), "kind": p.get("kind")}
         if not path:
             item["note"] = "note_demo"
@@ -183,8 +194,23 @@ def build_plan(lib):
         planned.update(os.path.normcase(f) for f in item["files"])
         item["sizes"] = [os.path.getsize(f) for f in item["files"]]
         item["bytes"] = sum(item["sizes"])
+        # date di creazione e ultima modifica di ogni file (lette qui, in background: sul NAS costano)
+        item["times"] = [file_times(f) for f in (item["files"] or [path])]
+        # il file della foto c'è ancora sul disco? None per le foto dimostrative, che non hanno file
+        item["present"] = None if not path else item["note"] != "note_missing"
+        # cosa fare della foto: "full" = file dal disco e foto dal cestino, "trash" = solo dal cestino,
+        # "keep" = lasciarla nel cestino. Senza file da cancellare il massimo è "trash".
+        item["action"] = "full" if item["files"] else "trash"
         plan.append(item)
     return plan
+
+
+ACTIONS = ("full", "trash", "keep")
+
+
+def set_action(item, action):
+    """Applica un'azione a una foto; "full" su una foto senza file diventa "trash"."""
+    item["action"] = "trash" if action == "full" and not item["files"] else action
 
 
 # ---------------------------------------------------------------- anteprime
@@ -261,6 +287,24 @@ def delete_file(path):
     if rc != 0 or op.fAnyOperationsAborted or os.path.exists(path):
         raise OSError(f"code {rc}")
 
+
+# colonne dell'elenco: (id, testo, larghezza, allineamento, si allarga); i clic sulle intestazioni ordinano
+COLUMNS = (("name", "col_file", 170, "w", False), ("present", "col_present", 82, "w", False),
+           ("folder", "col_folder", 130, "w", True),
+           ("size", "col_size", 82, "e", False), ("created", "col_created", 120, "w", False),
+           ("modified", "col_modified", 120, "w", False), ("camera", "col_camera", 122, "w", False),
+           ("author", "col_author", 116, "w", False), ("note", "col_status", 182, "w", False))
+COLUMN_IDS = [c[0] for c in COLUMNS]
+STATUS_COLUMN = COLUMN_IDS.index("note")
+# colonne visibili finché l'utente non sceglie diversamente (clic destro sull'intestazione o pulsante Colonne)
+DEFAULT_COLUMNS = ["name", "present", "folder", "size", "modified", "camera", "note"]
+
+# colori tenui delle righe (testo, sfondo): il testo resta leggibile anche sulle righe colorate
+ROW_COLORS = {
+    "full": ("#f6e3e3", "#4d2b30"),   # rosso: file dal disco e foto dal cestino
+    "trash": ("#f5ecd2", "#4a3f20"),  # giallo: solo dal cestino
+    "keep": ("#dff2e5", "#24432f"),   # verde: resta nel cestino
+}
 
 BACKUP_PREFIX = "CleanCraftNas backup - "
 LEGACY_BACKUP_PREFIX = "Backup pulizia cestino - "  # versioni 1.0–1.1
@@ -342,7 +386,19 @@ def execute(lib, cli, plan, root, kept=BACKUPS_KEPT):
     backup = backup_library(lib, root, kept)
     log(f"--- cleanup of {lib} (backup: {backup})")
     removed, failed, deleted_files = [], [], 0
+    missing, trash_only = [], []  # nomi delle foto tolte solo dal cestino: file già spariti / scelta dell'utente
     for item in plan:
+        if item["action"] == "keep":
+            continue
+        if item["action"] == "trash" or not item["files"]:
+            removed.append(item["id"])
+            if item["note"] == "note_missing":
+                missing.append(item["path"] or item["name"])
+                log(f"not on disk, removed from trash only: {item['path']}")
+            else:
+                trash_only.append(item["path"] or item["name"])
+                log(f"removed from trash only, file kept: {item['path']}")
+            continue
         ok = True
         for f in item["files"]:
             if not os.path.exists(f):
@@ -362,8 +418,9 @@ def execute(lib, cli, plan, root, kept=BACKUPS_KEPT):
         run_cli(cli, lib, [("photo.deletePermanently", {"ids": removed})])
     left = sum(1 for p in read_catalog(lib)["photos"].values() if p.get("deleted"))
     log(f"removed from library: {len(removed)}, files deleted: {deleted_files}, errors: {len(failed)}, "
-        f"still in trash: {left}")
-    return {"removed": len(removed), "files": deleted_files, "failed": failed, "left": left, "backup": backup}
+        f"not on disk: {len(missing)}, trash only: {len(trash_only)}, still in trash: {left}")
+    return {"removed": len(removed), "files": deleted_files, "failed": failed, "left": left, "backup": backup,
+            "missing": missing, "trash_only": trash_only, "removed_ids": removed}
 
 
 def human(n):
@@ -608,8 +665,8 @@ class App(tk.Tk):
         super().__init__()
         self.withdraw()
         self.title(APP_NAME)
-        self.geometry("1240x740")
-        self.minsize(900, 560)
+        self.geometry("1380x760")
+        self.minsize(960, 560)
         set_icon(self)
         setup_theme(self)
         self.settings = load_settings()
@@ -701,21 +758,32 @@ class App(tk.Tk):
         panes = ttk.Panedwindow(outer, orient="horizontal")
         panes.pack(fill="both", expand=True, pady=(14, 0))
         listf = ttk.Frame(panes)
-        cols = ("name", "folder", "size", "note")
-        self.tree = ttk.Treeview(listf, columns=cols, show="headings", selectmode="browse")
-        for c, title, w, anchor, stretch in (("name", t("col_file"), 230, "w", False),
-                                             ("folder", t("col_folder"), 240, "w", True),
-                                             ("size", t("col_size") + "   ", 100, "e", False),
-                                             ("note", "   " + t("col_status"), 150, "w", False)):
-            self.tree.heading(c, text=title, anchor=anchor)
+        legend = ttk.Frame(listf)
+        legend.pack(side="top", fill="x", pady=(0, 6))
+        for action in ACTIONS:
+            tk.Label(legend, text="    ", bg=ROW_COLORS[action][1], bd=0, highlightthickness=1,
+                     highlightbackground="#5f6368").pack(side="left", padx=(0, 6))
+            ttk.Label(legend, text=t("act_" + action), style="Muted.TLabel").pack(side="left", padx=(0, 14))
+        self.btn_columns = ttk.Button(legend, text="☰  " + t("columns_btn"), command=self.columns_menu_at_button)
+        self.btn_columns.pack(side="right")
+        ttk.Label(legend, text=t("legend_hint"), style="Muted.TLabel").pack(side="right", padx=(0, 12))
+        self.tree = ttk.Treeview(listf, columns=COLUMN_IDS, show="headings", selectmode="extended")
+        for c, key, w, anchor, stretch in COLUMNS:
+            self.tree.heading(c, anchor=anchor, command=lambda c=c: self.sort_by(c))
             self.tree.column(c, width=w, minwidth=60, anchor=anchor, stretch=stretch)
-        self.tree.tag_configure("muted", foreground=MUTED)
-        self.tree.tag_configure("companion", foreground="#c4c7c5")
+        self.tree.configure(displaycolumns=self.visible_columns())
+        self.sort = tuple(self.settings.get("sort", ("folder", False)))
+        self.update_headings()
+        for action, (fg, bg) in ROW_COLORS.items():
+            self.tree.tag_configure(action, foreground=fg, background=bg)
+        self.tree.tag_configure("companion", foreground=MUTED)  # dopo i colori: vince sul testo
         sb = ttk.Scrollbar(listf, orient="vertical", command=self.tree.yview)
         self.tree.configure(yscrollcommand=sb.set)
         self.tree.pack(side="left", fill="both", expand=True)
         sb.pack(side="right", fill="y")
         self.tree.bind("<<TreeviewSelect>>", self.on_select)
+        self.tree.bind("<Button-3>", self.right_click)
+        self.tree.bind("<App>", self.row_menu)  # tasto menu della tastiera
         self.tree.bind("<Double-1>", lambda e: self.open_large())
         self.tree.bind("<Return>", lambda e: self.open_large())
         panes.add(listf, weight=3)
@@ -733,7 +801,7 @@ class App(tk.Tk):
         self.preview_info.pack(anchor="w", pady=(2, 0))
         panes.add(prev, weight=2)
         # l'elenco chiede più spazio di quello che gli serve: all'avvio il separatore va messo a mano
-        self.after(60, lambda: panes.sashpos(0, int(panes.winfo_width() * 0.6)))
+        self.after(60, lambda: panes.sashpos(0, int(panes.winfo_width() * 0.7)))
 
         self.rows = {}  # riga dell'elenco -> foto del piano
         self.current = None  # foto mostrata nell'anteprima
@@ -970,35 +1038,259 @@ class App(tk.Tk):
             return
         self.rows.clear()
         self.show_preview(None)
+        saved = self.saved_choices()
         for item in plan:
-            if not item["files"]:
-                row = self.tree.insert("", "end", values=(item["name"], os.path.dirname(item["path"] or ""), "",
-                                                          t(item["note"])), tags=("muted",))
+            if str(item["id"]) in saved:
+                set_action(item, saved[str(item["id"])])
+            entries = list(zip(item["files"], item["sizes"])) or [(item["path"] or item["name"], None)]
+            item["rows"] = []
+            for i, (f, size) in enumerate(entries):
+                created, modified = item["times"][i] if i < len(item["times"]) else (None, None)
+                # fotocamera e autore descrivono lo scatto: solo sulla prima riga, non su JPG/XMP compagni
+                present = "" if item["present"] is None else t("present_yes" if item["present"] else "present_no")
+                row = self.tree.insert("", "end", values=(os.path.basename(f), present, os.path.dirname(f),
+                                                          human(size) if size is not None else "",
+                                                          self.when(created), self.when(modified),
+                                                          item["camera"] if i == 0 else "",
+                                                          item["author"] if i == 0 else "", ""))
                 self.rows[row] = item
-                continue
-            for i, (f, size) in enumerate(zip(item["files"], item["sizes"])):
-                note = t("st_delete") if i == 0 else t("st_companion")
-                row = self.tree.insert("", "end", values=(os.path.basename(f), os.path.dirname(f), human(size), note),
-                                       tags=() if i == 0 else ("companion",))
-                self.rows[row] = item
-        n_files = sum(len(i["files"]) for i in plan)
+                item["rows"].append(row)
+            self.paint(item)
+        self.apply_sort()
+        self.update_counts()
+
+    @staticmethod
+    def when(seconds):
+        if seconds is None:
+            return ""
+        return datetime.datetime.fromtimestamp(seconds).strftime(DATE_FORMATS.get(i18n.LANG, "%d/%m/%Y") + "  %H:%M")
+
+    # ---- colonne visibili
+
+    def visible_columns(self):
+        """Colonne da mostrare, nell'ordine fisso dell'elenco; la colonna File c'è sempre."""
+        chosen = self.settings.get("columns") or DEFAULT_COLUMNS
+        return [c for c in COLUMN_IDS if c in chosen or c == "name"]
+
+    def right_click(self, event):
+        if self.tree.identify_region(event.x, event.y) == "heading":
+            self.columns_menu(event.x_root, event.y_root)
+        else:
+            self.row_menu(event)
+
+    def columns_menu_at_button(self):
+        b = self.btn_columns
+        self.columns_menu(b.winfo_rootx(), b.winfo_rooty() + b.winfo_height())
+
+    def columns_menu(self, x, y):
+        menu = tk.Menu(self, tearoff=0, bg="#2b2b2b", fg=TEXT, activebackground="#3d4a5c", activeforeground=TEXT,
+                       selectcolor=TEXT, disabledforeground="#6b6f73", bd=0, relief="flat", font=self.f_body)
+        visible = self.visible_columns()
+        self._column_vars = {}
+        for c, key, *_ in COLUMNS:
+            var = tk.BooleanVar(value=c in visible)
+            self._column_vars[c] = var
+            menu.add_checkbutton(label=t(key), variable=var, command=lambda c=c: self.toggle_column(c),
+                                 state="disabled" if c == "name" else "normal")
+        menu.add_separator()
+        menu.add_command(label=t("columns_reset"), command=self.reset_columns)
+        try:
+            menu.tk_popup(x, y)
+        finally:
+            menu.grab_release()
+
+    def toggle_column(self, col):
+        chosen = [c for c in COLUMN_IDS if self._column_vars[c].get() or c == "name"]
+        self.set_columns(chosen)
+
+    def reset_columns(self):
+        self.set_columns(list(DEFAULT_COLUMNS))
+
+    def set_columns(self, columns):
+        self.settings["columns"] = columns
+        save_settings(self.settings)
+        self.tree.configure(displaycolumns=self.visible_columns())
+        self.update_headings()
+
+    # ---- ordinamento
+
+    def update_headings(self):
+        col, reverse = self.sort
+        anchors = {c: anchor for c, _k, _w, anchor, _s in COLUMNS}
+        visible = self.visible_columns()
+        for c, key, _w, anchor, _s in COLUMNS:
+            text = t(key) + ((" ▼" if reverse else " ▲") if c == col else "")
+            # un po' d'aria tra una colonna allineata a destra e quella che la segue
+            before = visible[visible.index(c) - 1] if c in visible and visible.index(c) > 0 else None
+            if anchor == "e":
+                text += "   "
+            elif before and anchors[before] == "e":
+                text = "   " + text
+            self.tree.heading(c, text=text)
+
+    def sort_by(self, col):
+        current, reverse = self.sort
+        self.sort = (col, not reverse) if col == current else (col, False)
+        self.settings["sort"] = list(self.sort)
+        save_settings(self.settings)
+        self.update_headings()
+        self.apply_sort()
+
+    def apply_sort(self):
+        """Riordina per foto: le righe di uno stesso scatto (RAW, JPG, XMP) restano sempre insieme."""
+        col, reverse = self.sort
+
+        def key(item):
+            first = item["files"][0] if item["files"] else (item["path"] or item["name"])
+            created, modified = item["times"][0] if item["times"] else (None, None)
+            if col == "name":
+                return os.path.basename(first).lower()
+            if col == "present":  # prima quelli spariti dal disco
+                return ({False: 0, True: 1}.get(item["present"], 2), os.path.basename(first).lower())
+            if col == "folder":
+                return (os.path.dirname(first).lower(), os.path.basename(first).lower())
+            if col == "size":
+                return item["bytes"]
+            if col == "created":
+                return created or 0
+            if col == "modified":
+                return modified or 0
+            if col in ("camera", "author"):  # vuoti in fondo, in entrambi i versi
+                value = item[col].lower()
+                return (value == "") != reverse, value
+            return (ACTIONS.index(item["action"]), item["note"] or "", os.path.basename(first).lower())
+
+        index = 0
+        for item in sorted(self.plan, key=key, reverse=reverse):
+            for row in item.get("rows", []):
+                self.tree.move(row, "", index)
+                index += 1
+
+    def row_status(self, item, index):
+        if index > 0:
+            return t("st_companion")
+        if item["action"] == "keep":
+            return t("st_keep")
+        if item["action"] == "full":
+            return t("st_full")
+        if item["note"] == "note_missing":
+            return t("st_missing")
+        return t(item["note"]) if item["note"] else t("st_trash")  # foto senza file da cancellare: il motivo
+
+    def paint(self, item):
+        """Colore e stato delle righe della foto secondo la sua azione."""
+        for i, row in enumerate(item["rows"]):
+            values = list(self.tree.item(row, "values"))
+            values[STATUS_COLUMN] = self.row_status(item, i)
+            self.tree.item(row, values=values, tags=(item["action"],) + (("companion",) if i else ()))
+
+    def update_counts(self):
+        """Numeri in alto, banner e pulsante, contando solo i file che verranno davvero cancellati."""
+        plan, reason = self.plan, self.reason
+        full = [i for i in plan if i["action"] == "full"]
         self.stat_vars["photos"].set(str(len(plan)))
-        self.stat_vars["files"].set(str(n_files))
-        self.stat_vars["bytes"].set(human(sum(i["bytes"] for i in plan)))
+        self.stat_vars["files"].set(str(sum(len(i["files"]) for i in full)))
+        self.stat_vars["bytes"].set(human(sum(i["bytes"] for i in full)))
+        todo = any(i["action"] != "keep" for i in plan)
         if reason:
             self.set_status("warn", t(reason))
+            self.go.state(["disabled"])
         elif not plan:
             self.set_status("ok", t("st_empty"))
+            self.go.state(["disabled"])
+        elif not todo:
+            self.set_status("info", t("st_all_kept"))
+            self.go.state(["disabled"])
         else:
             self.set_status("info", t("st_ready", go=t("go")))
             self.go.state(["!disabled"])
 
+    # ---- scelte per foto (tasto destro)
+
+    def saved_choices(self):
+        """Scelte gialle/verdi della libreria corrente, ricordate tra un avvio e l'altro: {id foto: azione}."""
+        return self.settings.setdefault("choices", {}).get(self.settings.get("library", ""), {})
+
+    def store_choices(self, keep_ids=None):
+        """Salva le scelte diverse da quella predefinita; keep_ids limita alle foto ancora nel cestino."""
+        lib = self.settings.get("library", "")
+        default = {i["id"]: ("full" if i["files"] else "trash") for i in self.plan}
+        choices = {str(i["id"]): i["action"] for i in self.plan if i["action"] != default[i["id"]]}
+        if keep_ids is not None:
+            choices = {k: v for k, v in choices.items() if int(k) in keep_ids}
+        all_choices = self.settings.setdefault("choices", {})
+        if choices:
+            all_choices[lib] = choices
+        else:
+            all_choices.pop(lib, None)
+        save_settings(self.settings)
+
+    def row_menu(self, event):
+        if not self.rows or self.progress.winfo_ismapped():
+            return
+        row = self.tree.identify_row(event.y) if event.y else self.tree.focus()
+        if not row:
+            return
+        if row not in self.tree.selection():
+            self.tree.selection_set(row)
+        self.tree.focus(row)
+        items = self.selected_items()
+        can_full = any(i["files"] for i in items)
+        menu = tk.Menu(self, tearoff=0, bg="#2b2b2b", fg=TEXT, activebackground="#3d4a5c", activeforeground=TEXT,
+                       disabledforeground="#6b6f73", bd=0, relief="flat", font=self.f_body)
+        for action in ACTIONS:
+            menu.add_command(label=t("menu_" + action), command=lambda a=action: self.apply_action(a),
+                             state="normal" if action != "full" or can_full else "disabled")
+        menu.add_separator()
+        values = self.tree.item(row, "values")
+        path = os.path.join(values[COLUMN_IDS.index("folder")], values[0]) if values else ""
+        menu.add_command(label=t("menu_explorer"), command=lambda: self.show_in_explorer(path),
+                         state="normal" if path and (os.path.exists(path) or os.path.isdir(os.path.dirname(path)))
+                         else "disabled")
+        x = event.x_root if event.x_root else self.tree.winfo_rootx() + 40
+        y = event.y_root if event.y_root else self.tree.winfo_rooty() + 40
+        try:
+            menu.tk_popup(x, y)
+        finally:
+            menu.grab_release()
+
+    def selected_items(self):
+        """Foto delle righe selezionate, senza doppioni (le righe di uno stesso scatto sono una foto sola)."""
+        seen, items = set(), []
+        for row in self.tree.selection():
+            item = self.rows.get(row)
+            if item and item["id"] not in seen:
+                seen.add(item["id"])
+                items.append(item)
+        return items
+
+    def apply_action(self, action):
+        for item in self.selected_items():
+            set_action(item, action)
+            self.paint(item)
+        self.store_choices()
+        self.update_counts()
+
+    def show_in_explorer(self, path):
+        if os.path.exists(path):
+            subprocess.Popen(f'explorer /select,"{path}"')
+        elif os.path.isdir(os.path.dirname(path)):
+            os.startfile(os.path.dirname(path))
+
     def confirm(self):
-        n_files = sum(len(i["files"]) for i in self.plan)
-        total = sum(i["bytes"] for i in self.plan)
-        answer = Dialog.ask(self, t("confirm_title"), t("confirm_head", files=n_files, size=human(total)),
-                            t("confirm_body", photos=len(self.plan)), level="warn",
-                            buttons=[("cancel", t("btn_cancel"), False), ("delete", t("btn_delete"), True)],
+        groups = {"full": [], "trash": [], "missing": [], "keep": []}
+        for i in self.plan:
+            key = "missing" if i["action"] != "keep" and i["note"] == "note_missing" else i["action"]
+            groups[key].append(i)
+        n_files = sum(len(i["files"]) for i in groups["full"])
+        total = sum(i["bytes"] for i in groups["full"])
+        lines = [t("sum_" + key, count=len(items)) for key, items in groups.items() if items]
+        body = "\n".join("•  " + line for line in lines) + "\n\n"
+        body += (t("confirm_bins") + " " if n_files else "") + t("confirm_backup")
+        head = t("confirm_head", files=n_files, size=human(total)) if n_files else \
+            t("confirm_head_trash", photos=len(groups["trash"]) + len(groups["missing"]))
+        answer = Dialog.ask(self, t("confirm_title"), head, body, level="warn",
+                            buttons=[("cancel", t("btn_cancel"), False), ("delete", t("btn_go"), True)],
                             default="cancel")
         if answer != "delete":
             return
@@ -1022,13 +1314,21 @@ class App(tk.Tk):
         if error:
             Dialog.ask(self, APP_NAME, t("error_title"), str(error), level="error")
         else:
-            detail = ""
+            # le scelte restano solo per le foto ancora nel cestino
+            self.store_choices(keep_ids={i["id"] for i in self.plan} - set(result["removed_ids"]))
+            sections = []
             if result["failed"]:
-                detail = t("done_failed") + "\n" + "\n".join(result["failed"][:20]) + "\n\n"
-            detail += t("done_backup") + "\n" + result["backup"]
-            Dialog.ask(self, APP_NAME, t("done_warn_title") if result["failed"] else t("done_title"),
-                       t("done_body", removed=result["removed"], files=result["files"], left=result["left"]),
-                       level="warn" if result["failed"] else "ok", detail=detail)
+                sections.append(t("done_failed") + "\n" + "\n".join(result["failed"][:20]))
+            if result["missing"]:
+                sections.append(t("done_missing") + "\n" + "\n".join(result["missing"]))
+            if result["trash_only"]:
+                sections.append(t("done_trash_only") + "\n" + "\n".join(result["trash_only"]))
+            sections.append(t("done_backup") + "\n" + result["backup"])
+            body = t("done_body", removed=result["removed"], files=result["files"], left=result["left"])
+            if result["missing"]:
+                body += "\n" + t("done_missing_count", count=len(result["missing"]))
+            Dialog.ask(self, APP_NAME, t("done_warn_title") if result["failed"] else t("done_title"), body,
+                       level="warn" if result["failed"] else "ok", detail="\n\n".join(sections))
         self.refresh()
 
     def open_backups(self):
@@ -1043,8 +1343,9 @@ class App(tk.Tk):
     # ---- anteprima
 
     def on_select(self, _event=None):
-        sel = self.tree.selection()
-        self.show_preview(self.rows.get(sel[0]) if sel else None)
+        row = self.tree.focus() if self.tree.focus() in self.tree.selection() else \
+            (self.tree.selection() or [None])[0]
+        self.show_preview(self.rows.get(row) if row else None)
 
     def show_preview(self, item):
         self.current = item

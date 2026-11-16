@@ -41,6 +41,25 @@ CleanCraftNas uses **LightCraft's trash as the list of what to delete**:
 
 ![Confirmation dialog](docs/confirm.png)
 
+### Choose what happens to each photo
+
+Every row has a soft colour that says what will happen to that photo; **right-click** one or more rows (Shift/Ctrl + click to
+select several) to change it:
+
+| Colour | Right-click menu | What happens |
+|---|---|---|
+| red (default) | **Delete from disk and trash** | the files are deleted and the photo leaves LightCraft's trash |
+| yellow | **Remove from trash only** | the photo leaves the trash, the files stay where they are |
+| green | **Leave in trash** | nothing: the photo stays in LightCraft's trash |
+
+Yellow and green choices are remembered per library. Photos whose file is **already gone** from disk (for example videos you
+moved elsewhere) are recognised automatically, removed from the trash only, and listed by name in the final summary. The same
+menu has **Show in File Explorer**.
+
+The list can be **sorted by any column** (click the heading, click again to reverse; the RAW/JPG/XMP of one shot stay together).
+Besides file, folder, size and status there are **On disk** (✓/✗: is the file still there?), **Created**, **Modified**,
+**Camera** and **Author**: choose which ones to show with **Columns** or by right-clicking the headings.
+
 CleanCraftNas then:
 
 1. **backs up the library** (`catalog.snap`, `catalog.log`, `view.json`) into a `CleanCraftNas backup - <library>` folder next
@@ -256,6 +275,15 @@ CleanCraftNas usa **il cestino di LightCraft come elenco di ciò che va cancella
 L'app allora **fa un backup della libreria**, **cancella i file** delle foto nel cestino (con il JPG dello stesso scatto e
 l'XMP accanto) e **svuota il cestino di LightCraft** con il comando ufficiale di LightCraft, solo per le foto i cui file sono
 stati davvero cancellati.
+
+**Cosa fare di ogni foto:** ogni riga ha un colore tenue che dice cosa succederà; con il **tasto destro** su una o più righe
+(Maiusc/Ctrl + clic per selezionarne più di una) lo cambi: **rosso**, il predefinito, «Cancella da disco e cestino»;
+**giallo** «Togli solo dal cestino» (i file restano); **verde** «Lascia nel cestino». Le scelte gialle e verdi vengono
+ricordate per ogni libreria. Le foto il cui file **non c'è più** sul disco (per esempio video spostati altrove) vengono
+riconosciute da sole, tolte solo dal cestino e elencate per nome nel riepilogo finale. Dallo stesso menu c'è **Mostra in
+Esplora file**. L'elenco si **ordina per qualunque colonna** cliccando sull'intestazione; oltre a file, cartella, dimensione e
+stato ci sono **Su disco** (✓/✗: il file c'è ancora?), **Creato**, **Modificato**, **Fotocamera** e **Autore**, e scegli quali mostrare con **Colonne** o con il tasto
+destro sulle intestazioni.
 
 **Backup:** prima di ogni pulizia il catalogo della libreria viene copiato in una cartella `CleanCraftNas backup - <libreria>`,
 accanto alla libreria oppure nella cartella che scegli in **⚙ Impostazioni**, dove decidi anche quanti backup tenere. Con il
