@@ -41,7 +41,6 @@ DEFAULT_CLI = os.path.join(LOCAL, r"Programs\ArtCraft\LightCraft\lightcraft-cli.
 # file con lo stesso nome della foto che vengono cancellati insieme a lei
 COMPANIONS = (".xmp", ".jpg", ".jpeg")
 BACKUPS_KEPT = 5
-UPDATE_EVERY = 12 * 3600  # secondi tra due controlli automatici degli aggiornamenti
 NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 
 
@@ -289,11 +288,11 @@ def delete_file(path):
 
 
 # colonne dell'elenco: (id, testo, larghezza, allineamento, si allarga); i clic sulle intestazioni ordinano
-COLUMNS = (("name", "col_file", 170, "w", False), ("present", "col_present", 82, "w", False),
-           ("folder", "col_folder", 130, "w", True),
-           ("size", "col_size", 82, "e", False), ("created", "col_created", 120, "w", False),
-           ("modified", "col_modified", 120, "w", False), ("camera", "col_camera", 122, "w", False),
-           ("author", "col_author", 116, "w", False), ("note", "col_status", 182, "w", False))
+COLUMNS = (("name", "col_file", 156, "w", False), ("present", "col_present", 82, "w", False),
+           ("folder", "col_folder", 110, "w", True),
+           ("size", "col_size", 82, "e", False), ("created", "col_created", 118, "w", False),
+           ("modified", "col_modified", 118, "w", False), ("camera", "col_camera", 116, "w", False),
+           ("author", "col_author", 110, "w", False), ("note", "col_status", 176, "w", False))
 COLUMN_IDS = [c[0] for c in COLUMNS]
 STATUS_COLUMN = COLUMN_IDS.index("note")
 # colonne visibili finché l'utente non sceglie diversamente (clic destro sull'intestazione o pulsante Colonne)
@@ -680,9 +679,8 @@ class App(tk.Tk):
         dark_title_bar(self)
         self.deiconify()
         self.after(150, self.refresh)
-        if self.settings.get("check_updates", True) and \
-                time.time() - self.settings.get("last_update_check", 0) > UPDATE_EVERY:
-            self.after(2500, self.check_updates)
+        if self.settings.get("check_updates", True):
+            self.after(2500, self.check_updates)  # in silenzio: se c'è una versione nuova compare il link in basso
 
     def _build(self):
         """Costruisce tutta la finestra nella lingua corrente (si richiama quando la lingua cambia)."""
@@ -693,9 +691,6 @@ class App(tk.Tk):
         head = ttk.Frame(outer)
         head.pack(fill="x")
         ttk.Button(head, text="⚙  " + t("settings"), command=self.open_settings).pack(side="right", anchor="n")
-        self.btn_update = ttk.Button(head, style="Accent.TButton", command=self.offer_update)
-        if self.release:
-            self.show_update_button()
         ttk.Label(head, text=APP_NAME, style="Title.TLabel").pack(anchor="w")
         ttk.Label(head, text=t("subtitle"), style="Muted.TLabel").pack(anchor="w", pady=(2, 0))
 
@@ -746,6 +741,11 @@ class App(tk.Tk):
         ttk.Button(foot, text=t("open_log"), command=self.open_log).pack(side="left")
         ttk.Button(foot, text=t("backups_btn"), command=self.open_backups).pack(side="left", padx=(8, 0))
         ttk.Label(foot, text=f"v{VERSION}", style="Muted.TLabel").pack(side="left", padx=(12, 0))
+        # compare solo se il controllo all'avvio trova una versione più nuova
+        self.update_link = ttk.Label(foot, style="Link.TLabel", cursor="hand2")
+        self.update_link.bind("<Button-1>", lambda e: self.offer_update())
+        if self.release:
+            self.show_update_link()
         self.go = ttk.Button(foot, text=t("go"), style="Accent.TButton", command=self.confirm)
         self.go.pack(side="right")
         self.progress = ttk.Progressbar(foot, mode="indeterminate", length=160)
@@ -871,7 +871,7 @@ class App(tk.Tk):
             save_settings(self.settings)
         if release and updater.is_newer(release["version"]):
             self.release = release
-            self.show_update_button()
+            self.show_update_link()
             if manual:
                 self.offer_update(parent)
         elif manual:
@@ -881,9 +881,9 @@ class App(tk.Tk):
             else:
                 Dialog.ask(owner, t("updates_label"), t("upd_none", version=VERSION), None, level="ok")
 
-    def show_update_button(self):
-        self.btn_update.configure(text="⬆  " + t("upd_button", version=self.release["version"]))
-        self.btn_update.pack(side="right", anchor="n", padx=(0, 8))
+    def show_update_link(self):
+        self.update_link.configure(text="⬆ " + t("upd_link", version=self.release["version"]))
+        self.update_link.pack(side="left", padx=(10, 0))
 
     def offer_update(self, parent=None):
         rel = self.release
@@ -1179,7 +1179,7 @@ class App(tk.Tk):
         for c, key, width, _anchor, _s in COLUMNS:
             text = t(key) + ((" ▼" if reverse else " ▲") if c == col else "")
             # intestazioni sempre a sinistra e mai più strette del loro titolo (con la freccia), in ogni lingua
-            need = self.f_small.measure(t(key) + " ▼") + 26
+            need = self.f_small.measure(t(key) + " ▼") + 34  # titolo, freccia e margini dell'intestazione
             self.tree.heading(c, text=text, anchor="w")
             self.tree.column(c, minwidth=need, width=max(width, need, self.tree.column(c, "width")))
 

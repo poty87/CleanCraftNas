@@ -138,9 +138,9 @@ msiexec /i CleanCraftNas-x.y.z.msi /qn CCN_LANGUAGE=en CCN_DESKTOP=0 TARGETDIR="
 
 ## Updates
 
-- CleanCraftNas checks GitHub for a new release at startup (at most every 12 hours; it only asks which version was released
-  last). When there is one, an **Update** button appears: it downloads the new setup, checks its size and SHA-256 and starts
-  it, and the setup updates the app in place, keeping folder, language and settings. You can turn the check off, or run it by
+- At every start CleanCraftNas quietly asks GitHub which version was released last. When there is a newer one, a link
+  **⬆ Version x.y.z available** appears at the bottom, next to the current version: it downloads the new setup, checks its
+  size and SHA-256 and starts it, and the setup updates the app in place, keeping folder, language and settings. You can turn the check off, or run it by
   hand, in **⚙ Settings**.
 - You can also just download and run a newer setup: it recognises the installed version and offers **Update**.
 
@@ -314,8 +314,8 @@ Lingue: italiano, inglese, tedesco, spagnolo, francese, portoghese; si cambiano 
 
 ### Aggiornamenti
 
-All'avvio CleanCraftNas chiede a GitHub se è uscita una versione nuova (al massimo ogni 12 ore). Se c'è, compare il pulsante
-**Aggiornamento**: scarica la nuova installazione, ne verifica dimensione e SHA-256 e la avvia; l'aggiornamento mantiene
+A ogni avvio CleanCraftNas chiede in silenzio a GitHub se è uscita una versione nuova. Se c'è, in basso accanto alla versione
+attuale compare il link **⬆ Disponibile la versione x.y.z**: scarica la nuova installazione, ne verifica dimensione e SHA-256 e la avvia; l'aggiornamento mantiene
 cartella, lingua e impostazioni. Il controllo si può disattivare o lanciare a mano da **⚙ Impostazioni**. Puoi anche
 scaricare tu la nuova installazione: riconosce la versione presente e propone **Aggiorna**. Una versione più vecchia non può
 sostituirne una più nuova: l'installazione lo rifiuta, così non si torna indietro per sbaglio.

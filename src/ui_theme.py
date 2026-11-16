@@ -70,6 +70,7 @@ def setup_theme(root):
     root.f_small = tkfont.Font(family=family, size=9)
     root.f_strong = tkfont.Font(family=family, size=11, weight="bold")
     root.f_stat = tkfont.Font(family=family, size=20, weight="bold")
+    root.f_link = tkfont.Font(family=family, size=9, underline=True)
     st = ttk.Style(root)
     st.configure("Muted.TLabel", foreground=MUTED, font=root.f_small)
     st.configure("Title.TLabel", font=root.f_title)
@@ -77,7 +78,9 @@ def setup_theme(root):
     st.configure("Body.TLabel", font=root.f_body)
     st.configure("Stat.TLabel", font=root.f_stat)
     st.configure("Treeview", rowheight=30, font=root.f_body)
-    st.configure("Treeview.Heading", font=root.f_small)
+    # margine interno: senza, i titoli partono dal primo pixel della colonna
+    st.configure("Treeview.Heading", font=root.f_small, padding=(10, 5, 8, 5))
+    st.configure("Link.TLabel", foreground=ACCENT, font=root.f_link)
     # l'elenco che si apre dai menu a tendina è un Listbox Tk: va allineato a mano ai caratteri dell'app
     root.option_add("*TCombobox*Listbox.font", root.f_body)
 
