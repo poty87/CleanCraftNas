@@ -779,6 +779,10 @@ class App(tk.Tk):
         attach_scrollbars(self.tree)
         self.tree.bind("<<TreeviewSelect>>", self.on_select)
         self.tree.bind("<Button-3>", self.right_click)
+        # trascinare un'intestazione sposta la colonna; un clic semplice continua a ordinare
+        self.tree.bind("<ButtonPress-1>", self.heading_press, add="+")
+        self.tree.bind("<B1-Motion>", self.heading_motion, add="+")
+        self.tree.bind("<ButtonRelease-1>", self.heading_release, add="+")
         self.tree.bind("<App>", self.row_menu)  # tasto menu della tastiera
         self.tree.bind("<Double-1>", lambda e: self.open_large())
         self.tree.bind("<Return>", lambda e: self.open_large())
@@ -1064,30 +1068,52 @@ class App(tk.Tk):
     # ---- colonne visibili
 
     def visible_columns(self):
-        """Colonne da mostrare, nell'ordine fisso dell'elenco; la colonna File c'è sempre."""
-        chosen = self.settings.get("columns") or DEFAULT_COLUMNS
-        return [c for c in COLUMN_IDS if c in chosen or c == "name"]
+        """Colonne da mostrare, nell'ordine scelto dall'utente; la colonna File c'è sempre."""
+        chosen = [c for c in (self.settings.get("columns") or DEFAULT_COLUMNS) if c in COLUMN_IDS]
+        return chosen if "name" in chosen else ["name"] + chosen
+
+    def menu(self):
+        # niente voci disattivate: Windows le disegna "in rilievo", con un carattere che sembra diverso
+        return tk.Menu(self, tearoff=0, bg="#2b2b2b", fg=TEXT, activebackground="#3d4a5c", activeforeground=TEXT,
+                       selectcolor=TEXT, bd=0, relief="flat", font=self.f_body)
 
     def right_click(self, event):
-        if self.tree.identify_region(event.x, event.y) == "heading":
-            self.columns_menu(event.x_root, event.y_root)
+        if self.tree.identify_region(event.x, event.y) in ("heading", "separator"):
+            self.columns_menu(event.x_root, event.y_root, self.column_at(event.x))
         else:
             self.row_menu(event)
+
+    def column_at(self, x):
+        """Id della colonna visibile sotto la coordinata x del tree (None se fuori)."""
+        index = self.tree.identify_column(x)  # "#1", "#2"… nell'ordine visibile
+        visible = self.visible_columns()
+        try:
+            return visible[int(index.lstrip("#")) - 1]
+        except (ValueError, IndexError):
+            return None
 
     def columns_menu_at_button(self):
         b = self.btn_columns
         self.columns_menu(b.winfo_rootx(), b.winfo_rooty() + b.winfo_height())
 
-    def columns_menu(self, x, y):
-        menu = tk.Menu(self, tearoff=0, bg="#2b2b2b", fg=TEXT, activebackground="#3d4a5c", activeforeground=TEXT,
-                       selectcolor=TEXT, disabledforeground="#6b6f73", bd=0, relief="flat", font=self.f_body)
+    def columns_menu(self, x, y, clicked=None):
+        menu = self.menu()
         visible = self.visible_columns()
+        if clicked in visible:  # tasto destro su un'intestazione: si può spostare quella colonna
+            i = visible.index(clicked)
+            if i > 0:
+                menu.add_command(label="◀  " + t("col_move_left"), command=lambda: self.move_column(clicked, -1))
+            if i < len(visible) - 1:
+                menu.add_command(label=t("col_move_right") + "  ▶", command=lambda: self.move_column(clicked, 1))
+            if len(visible) > 1:
+                menu.add_separator()
         self._column_vars = {}
         for c, key, *_ in COLUMNS:
+            if c == "name":
+                continue  # sempre visibile: non serve una voce per toglierla
             var = tk.BooleanVar(value=c in visible)
             self._column_vars[c] = var
-            menu.add_checkbutton(label=t(key), variable=var, command=lambda c=c: self.toggle_column(c),
-                                 state="disabled" if c == "name" else "normal")
+            menu.add_checkbutton(label=t(key), variable=var, command=lambda c=c: self.toggle_column(c))
         menu.add_separator()
         menu.add_command(label=t("columns_reset"), command=self.reset_columns)
         try:
@@ -1096,8 +1122,21 @@ class App(tk.Tk):
             menu.grab_release()
 
     def toggle_column(self, col):
-        chosen = [c for c in COLUMN_IDS if self._column_vars[c].get() or c == "name"]
-        self.set_columns(chosen)
+        visible = self.visible_columns()
+        if self._column_vars[col].get() and col not in visible:
+            # rimessa al suo posto rispetto alle colonne vicine nell'ordine predefinito
+            before = [c for c in COLUMN_IDS[:COLUMN_IDS.index(col)] if c in visible]
+            visible.insert(visible.index(before[-1]) + 1 if before else 0, col)
+        elif not self._column_vars[col].get() and col in visible:
+            visible.remove(col)
+        self.set_columns(visible)
+
+    def move_column(self, col, step):
+        visible = self.visible_columns()
+        i = visible.index(col)
+        j = max(0, min(len(visible) - 1, i + step))
+        visible.insert(j, visible.pop(i))
+        self.set_columns(visible)
 
     def reset_columns(self):
         self.set_columns(list(DEFAULT_COLUMNS))
@@ -1108,21 +1147,41 @@ class App(tk.Tk):
         self.tree.configure(displaycolumns=self.visible_columns())
         self.update_headings()
 
+    # ---- trascinamento delle intestazioni per cambiare l'ordine delle colonne
+
+    def heading_press(self, event):
+        self._drag_col = self.column_at(event.x) if self.tree.identify_region(event.x, event.y) == "heading" else None
+        self._drag_x = event.x
+        self._dragging = False
+
+    def heading_motion(self, event):
+        if getattr(self, "_drag_col", None) and abs(event.x - self._drag_x) > 12:
+            self._dragging = True
+            self.tree.configure(cursor="sb_h_double_arrow")
+
+    def heading_release(self, event):
+        col, dragging = getattr(self, "_drag_col", None), getattr(self, "_dragging", False)
+        self._drag_col, self._dragging = None, False
+        if not (col and dragging):
+            return  # un clic semplice: ci pensa il comando dell'intestazione (ordinamento)
+        self.tree.configure(cursor="")
+        target = self.column_at(min(max(event.x, 1), self.tree.winfo_width() - 1))
+        visible = self.visible_columns()
+        if target and target != col:
+            visible.remove(col)
+            visible.insert(visible.index(target) + (1 if event.x > self._drag_x else 0), col)
+            self.set_columns(visible)
+
     # ---- ordinamento
 
     def update_headings(self):
         col, reverse = self.sort
-        anchors = {c: anchor for c, _k, _w, anchor, _s in COLUMNS}
-        visible = self.visible_columns()
-        for c, key, _w, anchor, _s in COLUMNS:
+        for c, key, width, _anchor, _s in COLUMNS:
             text = t(key) + ((" ▼" if reverse else " ▲") if c == col else "")
-            # un po' d'aria tra una colonna allineata a destra e quella che la segue
-            before = visible[visible.index(c) - 1] if c in visible and visible.index(c) > 0 else None
-            if anchor == "e":
-                text += "   "
-            elif before and anchors[before] == "e":
-                text = "   " + text
-            self.tree.heading(c, text=text)
+            # intestazioni sempre a sinistra e mai più strette del loro titolo (con la freccia), in ogni lingua
+            need = self.f_small.measure(t(key) + " ▼") + 26
+            self.tree.heading(c, text=text, anchor="w")
+            self.tree.column(c, minwidth=need, width=max(width, need, self.tree.column(c, "width")))
 
     def sort_by(self, col):
         current, reverse = self.sort
@@ -1231,18 +1290,16 @@ class App(tk.Tk):
             self.tree.selection_set(row)
         self.tree.focus(row)
         items = self.selected_items()
-        can_full = any(i["files"] for i in items)
-        menu = tk.Menu(self, tearoff=0, bg="#2b2b2b", fg=TEXT, activebackground="#3d4a5c", activeforeground=TEXT,
-                       disabledforeground="#6b6f73", bd=0, relief="flat", font=self.f_body)
+        menu = self.menu()
         for action in ACTIONS:
-            menu.add_command(label=t("menu_" + action), command=lambda a=action: self.apply_action(a),
-                             state="normal" if action != "full" or can_full else "disabled")
-        menu.add_separator()
+            if action == "full" and not any(i["files"] for i in items):
+                continue  # niente file da cancellare tra le righe scelte: la voce non serve
+            menu.add_command(label=t("menu_" + action), command=lambda a=action: self.apply_action(a))
         values = self.tree.item(row, "values")
         path = os.path.join(values[COLUMN_IDS.index("folder")], values[0]) if values else ""
-        menu.add_command(label=t("menu_explorer"), command=lambda: self.show_in_explorer(path),
-                         state="normal" if path and (os.path.exists(path) or os.path.isdir(os.path.dirname(path)))
-                         else "disabled")
+        if path and (os.path.exists(path) or os.path.isdir(os.path.dirname(path))):
+            menu.add_separator()
+            menu.add_command(label=t("menu_explorer"), command=lambda: self.show_in_explorer(path))
         x = event.x_root if event.x_root else self.tree.winfo_rootx() + 40
         y = event.y_root if event.y_root else self.tree.winfo_rooty() + 40
         try:

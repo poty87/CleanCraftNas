@@ -58,7 +58,9 @@ menu has **Show in File Explorer**.
 
 The list can be **sorted by any column** (click the heading, click again to reverse; the RAW/JPG/XMP of one shot stay together).
 Besides file, folder, size and status there are **On disk** (✓/✗: is the file still there?), **Created**, **Modified**,
-**Camera** and **Author**: choose which ones to show with **Columns** or by right-clicking the headings.
+**Camera** and **Author**: choose which ones to show with **Columns** or by right-clicking the headings, and put them in the
+order you like by **dragging a heading** left or right (or right-click it › *Move left* / *Move right*). The order is
+remembered.
 
 CleanCraftNas then:
 
@@ -283,7 +285,8 @@ ricordate per ogni libreria. Le foto il cui file **non c'è più** sul disco (pe
 riconosciute da sole, tolte solo dal cestino e elencate per nome nel riepilogo finale. Dallo stesso menu c'è **Mostra in
 Esplora file**. L'elenco si **ordina per qualunque colonna** cliccando sull'intestazione; oltre a file, cartella, dimensione e
 stato ci sono **Su disco** (✓/✗: il file c'è ancora?), **Creato**, **Modificato**, **Fotocamera** e **Autore**, e scegli quali mostrare con **Colonne** o con il tasto
-destro sulle intestazioni.
+destro sulle intestazioni; per cambiarne l'ordine **trascina un'intestazione** a destra o a sinistra (oppure tasto destro ›
+*Sposta a sinistra* / *Sposta a destra*).
 
 **Backup:** prima di ogni pulizia il catalogo della libreria viene copiato in una cartella `CleanCraftNas backup - <libreria>`,
 accanto alla libreria oppure nella cartella che scegli in **⚙ Impostazioni**, dove decidi anche quanti backup tenere. Con il
