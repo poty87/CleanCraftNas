@@ -262,26 +262,84 @@ def delete_file(path):
         raise OSError(f"code {rc}")
 
 
-def backup_library(lib):
-    # accanto alla libreria, non dentro: la cartella della libreria resta di Lightcraft
-    root = os.path.join(os.path.dirname(lib), "CleanCraftNas backup - " + os.path.basename(lib))
-    dest = os.path.join(root, datetime.datetime.now().strftime("%Y-%m-%d %H.%M.%S"))
+BACKUP_PREFIX = "CleanCraftNas backup - "
+LEGACY_BACKUP_PREFIX = "Backup pulizia cestino - "  # versioni 1.0–1.1
+STAMP = "%Y-%m-%d %H.%M.%S"
+
+
+def backup_root(lib, settings):
+    """Cartella dei backup di una libreria: accanto alla libreria (la sua cartella resta di Lightcraft) o in quella
+    scelta nelle Impostazioni, sempre in una sottocartella col nome della libreria."""
+    base = settings.get("backup_dir") or os.path.dirname(lib)
+    return os.path.join(base, BACKUP_PREFIX + os.path.basename(lib))
+
+
+def backup_library(lib, root, kept=BACKUPS_KEPT):
+    dest = os.path.join(root, datetime.datetime.now().strftime(STAMP))
     os.makedirs(dest)
     for name in ("catalog.snap", "catalog.log", "view.json"):
         src = os.path.join(lib, name)
         if os.path.exists(src):
             shutil.copy2(src, dest)
-    for old in sorted(os.listdir(root))[:-BACKUPS_KEPT]:
-        shutil.rmtree(os.path.join(root, old), ignore_errors=True)
+    for old in [b["path"] for b in list_backups_in(root)][kept:]:
+        shutil.rmtree(old, ignore_errors=True)
     return dest
 
 
-def execute(lib, cli, plan):
+def list_backups_in(root):
+    """Backup trovati in una cartella, dal più recente: [{path, when, bytes}]."""
+    found = []
+    try:
+        names = os.listdir(root)
+    except OSError:
+        return found
+    for name in names:
+        path = os.path.join(root, name)
+        try:
+            when = datetime.datetime.strptime(name, STAMP)
+        except ValueError:
+            continue
+        if not os.path.isfile(os.path.join(path, "catalog.snap")):
+            continue
+        size = sum(os.path.getsize(os.path.join(path, f)) for f in os.listdir(path)
+                   if os.path.isfile(os.path.join(path, f)))
+        found.append({"path": path, "when": when, "bytes": size})
+    return sorted(found, key=lambda b: b["when"], reverse=True)
+
+
+def list_backups(lib, settings):
+    """Tutti i backup della libreria: nella cartella attuale, accanto alla libreria e quelli delle versioni 1.0–1.1."""
+    roots = {backup_root(lib, settings), backup_root(lib, {}),
+             os.path.join(os.path.dirname(lib), LEGACY_BACKUP_PREFIX + os.path.basename(lib))}
+    backups = [b for root in roots for b in list_backups_in(root)]
+    return sorted(backups, key=lambda b: b["when"], reverse=True)
+
+
+def delete_backups(paths):
+    """Sposta i backup nel Cestino; toglie le cartelle che restano vuote. Restituisce gli errori."""
+    failed = []
+    for path in paths:
+        try:
+            delete_file(path)
+            log(f"backup deleted {path}")
+        except OSError as e:
+            failed.append(f"{path}: {e}")
+            log(f"ERROR deleting backup {path}: {e}")
+        root = os.path.dirname(path)
+        try:
+            if os.path.isdir(root) and not os.listdir(root):
+                os.rmdir(root)
+        except OSError:
+            pass
+    return failed
+
+
+def execute(lib, cli, plan, root, kept=BACKUPS_KEPT):
     """Cancella i file e toglie dalla libreria le foto i cui file non ci sono più (o restano ad altre foto)."""
     reason = library_open_reason(lib)
     if reason:
         raise RuntimeError(t(reason))
-    backup = backup_library(lib)
+    backup = backup_library(lib, root, kept)
     log(f"--- cleanup of {lib} (backup: {backup})")
     removed, failed, deleted_files = [], [], 0
     for item in plan:
@@ -350,6 +408,29 @@ class SettingsDialog(tk.Toplevel):
         ttk.Button(row, text=t("btn_browse"), command=self.browse).pack(side="left", padx=(8, 0))
         ttk.Label(frame, text=t("cli_hint"), style="Muted.TLabel").pack(anchor="w", pady=(4, 0))
 
+        ttk.Label(frame, text=t("backup_label").upper(), style="Muted.TLabel").pack(anchor="w", pady=(18, 4))
+        self.backup_mode = tk.StringVar(value="custom" if app.settings.get("backup_dir") else "library")
+        self.backup_dir = tk.StringVar(value=app.settings.get("backup_dir") or "")
+        ttk.Radiobutton(frame, text=t("backup_next_to"), value="library", variable=self.backup_mode,
+                        command=self.backup_mode_changed).pack(anchor="w")
+        row = ttk.Frame(frame)
+        row.pack(fill="x", pady=(4, 0))
+        ttk.Radiobutton(row, text=t("backup_custom"), value="custom", variable=self.backup_mode,
+                        command=self.backup_mode_changed).pack(side="left")
+        self.backup_entry = ttk.Entry(row, textvariable=self.backup_dir)
+        self.backup_entry.pack(side="left", fill="x", expand=True, padx=(8, 0))
+        self.backup_browse = ttk.Button(row, text=t("btn_browse"), command=self.browse_backup_dir)
+        self.backup_browse.pack(side="left", padx=(8, 0))
+        row = ttk.Frame(frame)
+        row.pack(fill="x", pady=(8, 0))
+        ttk.Label(row, text=t("backup_kept"), style="Body.TLabel").pack(side="left")
+        self.kept = tk.IntVar(value=app.settings.get("backups_kept", BACKUPS_KEPT))
+        ttk.Spinbox(row, from_=1, to=50, textvariable=self.kept, width=5, state="readonly").pack(side="left",
+                                                                                               padx=(10, 0))
+        ttk.Label(frame, text=t("backup_hint"), style="Muted.TLabel", wraplength=560, justify="left").pack(
+            anchor="w", pady=(4, 0))
+        self.backup_mode_changed()
+
         ttk.Label(frame, text=t("updates_label").upper(), style="Muted.TLabel").pack(anchor="w", pady=(18, 4))
         row = ttk.Frame(frame)
         row.pack(fill="x")
@@ -379,12 +460,32 @@ class SettingsDialog(tk.Toplevel):
         if path:
             self.cli.set(os.path.normpath(path))
 
+    def backup_mode_changed(self):
+        state = ["!disabled"] if self.backup_mode.get() == "custom" else ["disabled"]
+        self.backup_entry.state(state)
+        self.backup_browse.state(state)
+
+    def browse_backup_dir(self):
+        start = self.backup_dir.get() if os.path.isdir(self.backup_dir.get()) else os.path.expanduser("~")
+        path = filedialog.askdirectory(parent=self, title=t("backups_pick"), initialdir=start)
+        if path:
+            self.backup_dir.set(os.path.normpath(path))
+
     def save(self):
         cli = self.cli.get().strip()
         # il percorso predefinito si accetta anche se Lightcraft non c'è ancora: lo si chiede al momento di cancellare
         if cli and os.path.normcase(cli) != os.path.normcase(DEFAULT_CLI) and not is_cli(cli):
             Dialog.ask(self, t("settings"), t("cli_bad"), cli, level="warn")
             return
+        backup_dir = self.backup_dir.get().strip() if self.backup_mode.get() == "custom" else ""
+        if self.backup_mode.get() == "custom" and not os.path.isdir(backup_dir):
+            Dialog.ask(self, t("settings"), t("backup_dir_bad"), backup_dir or None, level="warn")
+            return
+        if backup_dir:
+            self.app.settings["backup_dir"] = os.path.normpath(backup_dir)
+        else:
+            self.app.settings.pop("backup_dir", None)
+        self.app.settings["backups_kept"] = max(1, min(50, int(self.kept.get())))
         self.app.settings["language"] = self.lang_codes[self.lang.current()]
         self.app.settings["check_updates"] = bool(self.auto_update.get())
         if cli and os.path.normcase(cli) != os.path.normcase(DEFAULT_CLI):
@@ -394,6 +495,110 @@ class SettingsDialog(tk.Toplevel):
         save_settings(self.app.settings)
         self.saved = True
         self.destroy()
+
+
+class BackupsDialog(tk.Toplevel):
+    """Elenco dei backup della libreria corrente, con apertura della cartella ed eliminazione."""
+
+    def __init__(self, app):
+        super().__init__(app)
+        self.withdraw()
+        self.app = app
+        self.lib = app.settings.get("library")
+        self.title(t("backups_title"))
+        self.geometry("760x460")
+        self.minsize(620, 360)
+        self.transient(app)
+        set_icon(self)
+        frame = ttk.Frame(self, padding=(24, 22, 24, 18))
+        frame.pack(fill="both", expand=True)
+        ttk.Label(frame, text=t("backups_title"), style="Title.TLabel").pack(anchor="w")
+        ttk.Label(frame, text=t("backups_intro"), style="Body.TLabel", wraplength=700, justify="left").pack(
+            anchor="w", pady=(6, 0))
+        self.where = ttk.Label(frame, style="Muted.TLabel", wraplength=700, justify="left")
+        self.where.pack(anchor="w", pady=(6, 0))
+
+        buttons = ttk.Frame(frame)
+        buttons.pack(side="bottom", fill="x", pady=(14, 0))
+        ttk.Button(buttons, text=t("w_close"), style="Accent.TButton", command=self.destroy).pack(side="right")
+        self.btn_all = ttk.Button(buttons, text=t("btn_delete_all"), command=lambda: self.delete(all_=True))
+        self.btn_all.pack(side="right", padx=(0, 8))
+        self.btn_sel = ttk.Button(buttons, text=t("btn_delete_selected"), command=self.delete)
+        self.btn_sel.pack(side="right", padx=(0, 8))
+        ttk.Button(buttons, text=t("btn_open_folder"), command=self.open_folder).pack(side="left")
+        self.total = ttk.Label(buttons, style="Muted.TLabel")
+        self.total.pack(side="left", padx=(12, 0))
+
+        listf = ttk.Frame(frame)
+        listf.pack(fill="both", expand=True, pady=(14, 0))
+        self.tree = ttk.Treeview(listf, columns=("when", "size", "folder"), show="headings", selectmode="extended")
+        for c, title, w, anchor, stretch in (("when", t("col_date"), 170, "w", False),
+                                             ("size", t("col_size") + "   ", 100, "e", False),
+                                             ("folder", "   " + t("col_folder"), 380, "w", True)):
+            self.tree.heading(c, text=title, anchor=anchor)
+            self.tree.column(c, width=w, minwidth=60, anchor=anchor, stretch=stretch)
+        sb = ttk.Scrollbar(listf, orient="vertical", command=self.tree.yview)
+        self.tree.configure(yscrollcommand=sb.set)
+        self.tree.pack(side="left", fill="both", expand=True)
+        sb.pack(side="right", fill="y")
+        self.tree.bind("<<TreeviewSelect>>", lambda e: self.update_buttons())
+        self.bind("<Escape>", lambda e: self.destroy())
+
+        self.load()
+        center_on(self, app)
+        dark_title_bar(self)
+        self.deiconify()
+        self.grab_set()
+
+    def load(self):
+        self.tree.delete(*self.tree.get_children())
+        self.backups = {}
+        if not is_library(self.lib):
+            self.where.configure(text=t("no_library"))
+            self.update_buttons()
+            return
+        self.where.configure(text=t("col_folder") + ": " + backup_root(self.lib, self.app.settings))
+        fmt = DATE_FORMATS.get(i18n.LANG, "%d/%m/%Y") + "  %H:%M:%S"
+        for b in list_backups(self.lib, self.app.settings):
+            row = self.tree.insert("", "end", values=(b["when"].strftime(fmt), human(b["bytes"]),
+                                                      os.path.dirname(b["path"])))
+            self.backups[row] = b
+        total = sum(b["bytes"] for b in self.backups.values())
+        self.total.configure(text=t("backups_total", count=len(self.backups), size=human(total)) if self.backups
+                             else t("backups_none"))
+        self.update_buttons()
+
+    def update_buttons(self):
+        self.btn_sel.state(["!disabled"] if self.tree.selection() else ["disabled"])
+        self.btn_all.state(["!disabled"] if self.backups else ["disabled"])
+
+    def open_folder(self):
+        sel = self.tree.selection()
+        path = self.backups[sel[0]]["path"] if sel else backup_root(self.lib, self.app.settings) if self.lib else None
+        if path and os.path.isdir(path):
+            os.startfile(path)
+        elif path and os.path.isdir(os.path.dirname(path)):
+            os.startfile(os.path.dirname(path))
+
+    def delete(self, all_=False):
+        chosen = list(self.backups.values()) if all_ else [self.backups[r] for r in self.tree.selection()]
+        if not chosen:
+            return
+        size = human(sum(b["bytes"] for b in chosen))
+        answer = Dialog.ask(self, t("backups_title"), t("backups_delete_head", count=len(chosen), size=size),
+                            t("backups_delete_body"), level="warn",
+                            buttons=[("cancel", t("btn_cancel"), False), ("delete", t("btn_delete"), True)],
+                            default="cancel")
+        if answer != "delete":
+            return
+        self.config(cursor="watch")
+        self.update()
+        failed = delete_backups([b["path"] for b in chosen])
+        self.config(cursor="")
+        if failed:
+            Dialog.ask(self, t("backups_title"), t("backups_delete_failed"), None, level="error",
+                       detail="\n".join(failed[:20]))
+        self.load()
 
 
 # ---------------------------------------------------------------- finestra principale
@@ -481,6 +686,7 @@ class App(tk.Tk):
         foot = ttk.Frame(outer)
         foot.pack(side="bottom", fill="x", pady=(14, 0))
         ttk.Button(foot, text=t("open_log"), command=self.open_log).pack(side="left")
+        ttk.Button(foot, text=t("backups_btn"), command=self.open_backups).pack(side="left", padx=(8, 0))
         ttk.Label(foot, text=f"v{VERSION}", style="Muted.TLabel").pack(side="left", padx=(12, 0))
         self.go = ttk.Button(foot, text=t("go"), style="Accent.TButton", command=self.confirm)
         self.go.pack(side="right")
@@ -729,11 +935,12 @@ class App(tk.Tk):
         if not cli:
             return
         lib, plan = self.settings["library"], self.plan
+        root, kept = backup_root(lib, self.settings), self.settings.get("backups_kept", BACKUPS_KEPT)
         self.set_busy(True, t("st_working"))
 
         def work():
             try:
-                self.after(0, self.done, execute(lib, cli, plan), None)
+                self.after(0, self.done, execute(lib, cli, plan, root, kept), None)
             except Exception as e:  # noqa: BLE001
                 log(f"ERROR: {e}")
                 self.after(0, self.done, None, e)
@@ -752,6 +959,9 @@ class App(tk.Tk):
                        t("done_body", removed=result["removed"], files=result["files"], left=result["left"]),
                        level="warn" if result["failed"] else "ok", detail=detail)
         self.refresh()
+
+    def open_backups(self):
+        self.wait_window(BackupsDialog(self))
 
     def open_log(self):
         if os.path.exists(LOG):

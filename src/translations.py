@@ -265,6 +265,98 @@ TEXTS = {
     "about": {"it": "Versione {version}", "en": "Version {version}", "de": "Version {version}",
               "es": "Versión {version}", "fr": "Version {version}", "pt": "Versão {version}"},
 
+    # ---- backup
+    "backups_btn": {"it": "Backup…", "en": "Backups…", "de": "Sicherungen…", "es": "Copias de seguridad…",
+                    "fr": "Sauvegardes…", "pt": "Cópias de segurança…"},
+    "backups_title": {"it": "Backup della libreria", "en": "Library backups", "de": "Sicherungen der Bibliothek",
+                      "es": "Copias de seguridad de la biblioteca", "fr": "Sauvegardes de la bibliothèque",
+                      "pt": "Cópias de segurança da biblioteca"},
+    "backups_intro": {
+        "it": "Prima di ogni pulizia CleanCraftNas salva una copia del catalogo della libreria. Qui puoi vederle ed "
+              "eliminarle.",
+        "en": "Before every cleanup CleanCraftNas saves a copy of the library's catalog. Here you can see and delete "
+              "them.",
+        "de": "Vor jeder Bereinigung speichert CleanCraftNas eine Kopie des Bibliothekskatalogs. Hier kannst du sie "
+              "ansehen und löschen.",
+        "es": "Antes de cada limpieza, CleanCraftNas guarda una copia del catálogo de la biblioteca. Aquí puedes "
+              "verlas y eliminarlas.",
+        "fr": "Avant chaque nettoyage, CleanCraftNas enregistre une copie du catalogue de la bibliothèque. Vous "
+              "pouvez les consulter et les supprimer ici.",
+        "pt": "Antes de cada limpeza, o CleanCraftNas guarda uma cópia do catálogo da biblioteca. Aqui pode vê-las "
+              "e eliminá-las.",
+    },
+    "col_date": {"it": "Data", "en": "Date", "de": "Datum", "es": "Fecha", "fr": "Date", "pt": "Data"},
+    "backups_none": {"it": "Non ci sono backup per questa libreria.", "en": "There are no backups for this library.",
+                     "de": "Für diese Bibliothek gibt es keine Sicherungen.",
+                     "es": "No hay copias de seguridad de esta biblioteca.",
+                     "fr": "Il n'y a aucune sauvegarde pour cette bibliothèque.",
+                     "pt": "Não há cópias de segurança desta biblioteca."},
+    "backups_total": {"it": "{count} backup · {size}", "en": "{count} backups · {size}",
+                      "de": "{count} Sicherungen · {size}", "es": "{count} copias · {size}",
+                      "fr": "{count} sauvegardes · {size}", "pt": "{count} cópias · {size}"},
+    "btn_open_folder": {"it": "Apri cartella", "en": "Open folder", "de": "Ordner öffnen", "es": "Abrir carpeta",
+                        "fr": "Ouvrir le dossier", "pt": "Abrir pasta"},
+    "btn_delete_selected": {"it": "Elimina selezionati", "en": "Delete selected", "de": "Ausgewählte löschen",
+                            "es": "Eliminar seleccionadas", "fr": "Supprimer la sélection",
+                            "pt": "Eliminar selecionadas"},
+    "btn_delete_all": {"it": "Elimina tutti", "en": "Delete all", "de": "Alle löschen", "es": "Eliminar todas",
+                       "fr": "Tout supprimer", "pt": "Eliminar todas"},
+    "backups_delete_head": {"it": "Eliminare {count} backup ({size})?", "en": "Delete {count} backups ({size})?",
+                            "de": "{count} Sicherungen ({size}) löschen?",
+                            "es": "¿Eliminar {count} copias de seguridad ({size})?",
+                            "fr": "Supprimer {count} sauvegardes ({size}) ?",
+                            "pt": "Eliminar {count} cópias de segurança ({size})?"},
+    "backups_delete_body": {
+        "it": "Finiscono nel Cestino di Windows, o nel cestino di Synology se sono sul NAS. Le foto e la libreria "
+              "non vengono toccate.",
+        "en": "They go to the Windows Recycle Bin, or to the Synology recycle bin if they are on the NAS. Photos and "
+              "library are not touched.",
+        "de": "Sie landen im Windows-Papierkorb oder, wenn sie auf dem NAS liegen, im Synology-Papierkorb. Fotos und "
+              "Bibliothek bleiben unverändert.",
+        "es": "Van a la Papelera de reciclaje de Windows, o a la de Synology si están en el NAS. Las fotos y la "
+              "biblioteca no se tocan.",
+        "fr": "Elles vont dans la Corbeille de Windows, ou dans celle de Synology si elles sont sur le NAS. Les "
+              "photos et la bibliothèque ne sont pas modifiées.",
+        "pt": "Vão para a Reciclagem do Windows, ou para a do Synology se estiverem no NAS. As fotos e a biblioteca "
+              "não são alteradas.",
+    },
+    "backups_delete_failed": {"it": "Non è stato possibile eliminare:", "en": "Could not delete:",
+                              "de": "Konnte nicht gelöscht werden:", "es": "No se pudo eliminar:",
+                              "fr": "Impossible de supprimer :", "pt": "Não foi possível eliminar:"},
+    "backup_label": {"it": "Backup", "en": "Backups", "de": "Sicherungen", "es": "Copias de seguridad",
+                     "fr": "Sauvegardes", "pt": "Cópias de segurança"},
+    "backup_next_to": {"it": "Accanto alla libreria (predefinito)", "en": "Next to the library (default)",
+                       "de": "Neben der Bibliothek (Standard)", "es": "Junto a la biblioteca (predeterminado)",
+                       "fr": "À côté de la bibliothèque (par défaut)", "pt": "Ao lado da biblioteca (predefinição)"},
+    "backup_custom": {"it": "In questa cartella:", "en": "In this folder:", "de": "In diesem Ordner:",
+                      "es": "En esta carpeta:", "fr": "Dans ce dossier :", "pt": "Nesta pasta:"},
+    "backup_kept": {"it": "Backup da tenere per libreria", "en": "Backups to keep per library",
+                    "de": "Aufzubewahrende Sicherungen pro Bibliothek", "es": "Copias que se conservan por biblioteca",
+                    "fr": "Sauvegardes à conserver par bibliothèque", "pt": "Cópias a manter por biblioteca"},
+    "backup_hint": {
+        "it": "Ogni libreria ha la sua sottocartella «CleanCraftNas backup - <nome libreria>». I backup già fatti "
+              "restano dove sono.",
+        "en": "Each library gets its own subfolder “CleanCraftNas backup - <library name>”. Existing backups stay "
+              "where they are.",
+        "de": "Jede Bibliothek erhält einen eigenen Unterordner „CleanCraftNas backup - <Bibliotheksname>“. "
+              "Vorhandene Sicherungen bleiben, wo sie sind.",
+        "es": "Cada biblioteca tiene su propia subcarpeta «CleanCraftNas backup - <nombre de la biblioteca>». Las "
+              "copias ya hechas se quedan donde están.",
+        "fr": "Chaque bibliothèque a son propre sous-dossier « CleanCraftNas backup - <nom de la bibliothèque> ». "
+              "Les sauvegardes existantes restent où elles sont.",
+        "pt": "Cada biblioteca tem a sua própria subpasta «CleanCraftNas backup - <nome da biblioteca>». As cópias "
+              "já feitas ficam onde estão.",
+    },
+    "backup_dir_bad": {"it": "Scegli una cartella esistente per i backup.",
+                       "en": "Choose an existing folder for the backups.",
+                       "de": "Wähle einen vorhandenen Ordner für die Sicherungen.",
+                       "es": "Elige una carpeta existente para las copias de seguridad.",
+                       "fr": "Choisissez un dossier existant pour les sauvegardes.",
+                       "pt": "Escolha uma pasta existente para as cópias de segurança."},
+    "backups_pick": {"it": "Cartella per i backup", "en": "Folder for the backups", "de": "Ordner für die Sicherungen",
+                     "es": "Carpeta para las copias de seguridad", "fr": "Dossier des sauvegardes",
+                     "pt": "Pasta para as cópias de segurança"},
+
     # ---- aggiornamenti
     "updates_label": {"it": "Aggiornamenti", "en": "Updates", "de": "Updates", "es": "Actualizaciones",
                       "fr": "Mises à jour", "pt": "Atualizações"},

@@ -62,6 +62,14 @@ CleanCraftNas then:
 - If a file can't be deleted, its photo **stays in the trash** and the error is shown and logged.
 - Every operation is written to a log (`%LOCALAPPDATA%\CleanCraftNas\cleancraftnas.log`, button **Open log**).
 
+### Backups
+
+Before every cleanup the library catalog is copied to a `CleanCraftNas backup - <library>` folder. By default it sits next to
+the library; in **⚙ Settings** you can choose another folder on your PC and how many backups to keep per library (5 by
+default). The **Backups…** button lists the backups of the current library (also those made in another folder or by older
+versions) with date and size, opens their folder and deletes the ones you select, or all of them: they go to the Recycle
+Bin.
+
 ## Install
 
 Download **`CleanCraftNas-Setup-x.y.z.exe`** from [Releases](https://github.com/poty87/CleanCraftNas/releases/latest) and run it.
@@ -240,6 +248,10 @@ CleanCraftNas usa **il cestino di LightCraft come elenco di ciò che va cancella
 L'app allora **fa un backup della libreria**, **cancella i file** delle foto nel cestino (con il JPG dello stesso scatto e
 l'XMP accanto) e **svuota il cestino di LightCraft** con il comando ufficiale di LightCraft, solo per le foto i cui file sono
 stati davvero cancellati.
+
+**Backup:** prima di ogni pulizia il catalogo della libreria viene copiato in una cartella `CleanCraftNas backup - <libreria>`,
+accanto alla libreria oppure nella cartella che scegli in **⚙ Impostazioni**, dove decidi anche quanti backup tenere. Con il
+pulsante **Backup…** li vedi tutti, con data e dimensione, e puoi eliminare quelli selezionati o tutti (finiscono nel Cestino).
 
 Protezioni: non parte se LightCraft è aperto; non cancella mai un file usato da una foto ancora in libreria (per esempio
 l'originale di una copia virtuale); i file sul NAS finiscono nel **cestino di Synology** (`#recycle`, se attivo sulla cartella
