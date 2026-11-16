@@ -84,8 +84,16 @@ Download **`CleanCraftNas-Setup-x.y.z.exe`** from [Releases](https://github.com/
 - Run it again to **reinstall** (repair) or **uninstall**; you can also uninstall from *Settings › Apps*. Your settings and log
   are kept.
 
-On first start click **Change library…** and pick the LightCraft library folder (the one containing `catalog.snap`).
-CleanCraftNas remembers it.
+On first start click **＋ Add library…** and pick the LightCraft library folder (the one containing `catalog.snap`).
+
+### More than one library
+
+Add as many libraries as you like with **＋ Add library…** and switch between them from the drop-down menu: the list, the
+backups and the cleanup always refer to the library you picked, and CleanCraftNas reopens on the last one. Libraries with the
+same folder name show the folder that contains them; a library that can't be found right now (drive not connected, folder
+moved) is marked with ⚠. **Remove from list** only forgets a library: its photos and backups are not touched.
+
+![Libraries](docs/libraries.png)
 
 **Requirements:** Windows 10 or 11 (64-bit) and LightCraft installed (CleanCraftNas uses its `lightcraft-cli.exe`; if it is not
 in the usual place, `%LOCALAPPDATA%\Programs\ArtCraft\LightCraft`, you can point to it in **Settings**).
@@ -262,9 +270,14 @@ condivisa) e quelli sul PC nel **Cestino di Windows**; ogni operazione è annota
 Scarica **`CleanCraftNas-Setup-x.y.z.exe`** dalle [Release](https://github.com/poty87/CleanCraftNas/releases/latest) e
 avvialo. L'installazione ha la stessa grafica dell'app e ti fa scegliere **lingua**, **cartella** e se creare il
 **collegamento sul Desktop**. Contiene già tutto (Python incluso) e si installa solo per il tuo utente, senza permessi di
-amministratore. Rilanciandola puoi **reinstallare** o **disinstallare**. Al primo avvio premi **Cambia libreria…** e scegli
-la cartella della libreria LightCraft (quella con `catalog.snap`). Serve LightCraft installato (l'app usa il suo
+amministratore. Rilanciandola puoi **reinstallare** o **disinstallare**. Al primo avvio premi **＋ Aggiungi libreria…** e
+scegli la cartella della libreria LightCraft (quella con `catalog.snap`). Serve LightCraft installato (l'app usa il suo
 `lightcraft-cli.exe`).
+
+**Più librerie:** aggiungine quante vuoi con **＋ Aggiungi libreria…** e passa dall'una all'altra con il menu a tendina;
+elenco, backup e pulizia riguardano sempre la libreria scelta, e all'avvio CleanCraftNas riapre l'ultima usata. Le librerie
+con lo stesso nome mostrano la cartella che le contiene; quelle che al momento non si trovano (disco non collegato, cartella
+spostata) hanno il simbolo ⚠. **Togli dall'elenco** fa solo dimenticare la libreria: foto e backup restano dove sono.
 
 Lingue: italiano, inglese, tedesco, spagnolo, francese, portoghese; si cambiano quando vuoi da **⚙ Impostazioni**.
 

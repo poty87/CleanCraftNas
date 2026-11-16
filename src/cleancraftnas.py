@@ -613,6 +613,10 @@ class App(tk.Tk):
         set_icon(self)
         setup_theme(self)
         self.settings = load_settings()
+        # fino alla 1.4 c'era una sola libreria: diventa la prima dell'elenco
+        libraries = self.settings.setdefault("libraries", [])
+        if self.settings.get("library") and self.settings["library"] not in libraries:
+            libraries.insert(0, self.settings["library"])
         i18n.set_language(self.settings.get("language") or registry_value("Language"))
         self.plan = []
         self.reason = None
@@ -621,10 +625,7 @@ class App(tk.Tk):
         self._build()
         dark_title_bar(self)
         self.deiconify()
-        if is_library(self.settings.get("library")):
-            self.after(150, self.refresh)
-        else:
-            self.set_status("info", t("st_choose"))
+        self.after(150, self.refresh)
         if self.settings.get("check_updates", True) and \
                 time.time() - self.settings.get("last_update_check", 0) > UPDATE_EVERY:
             self.after(2500, self.check_updates)
@@ -644,19 +645,22 @@ class App(tk.Tk):
         ttk.Label(head, text=APP_NAME, style="Title.TLabel").pack(anchor="w")
         ttk.Label(head, text=t("subtitle"), style="Muted.TLabel").pack(anchor="w", pady=(2, 0))
 
-        # libreria
+        # libreria: menu a tendina con le librerie salvate
         card = ttk.Frame(outer, style="Card.TFrame", padding=(16, 12))
         card.pack(fill="x", pady=(16, 0))
         info = ttk.Frame(card)
         info.pack(side="left", fill="x", expand=True)
         ttk.Label(info, text=t("library"), style="Muted.TLabel").pack(anchor="w")
-        self.lib_name = ttk.Label(info, style="Strong.TLabel")
-        self.lib_name.pack(anchor="w", pady=(2, 0))
+        self.lib_combo = ttk.Combobox(info, state="readonly", width=48, font=self.f_strong)
+        self.lib_combo.pack(anchor="w", pady=(4, 2))
+        self.lib_combo.bind("<<ComboboxSelected>>", self.on_library_selected)
         self.lib_path = ttk.Label(info, style="Muted.TLabel")
         self.lib_path.pack(anchor="w")
         self.btn_refresh = ttk.Button(card, text="↻  " + t("refresh"), command=self.refresh)
         self.btn_refresh.pack(side="right")
-        ttk.Button(card, text=t("change_library"), command=self.choose).pack(side="right", padx=(0, 8))
+        self.btn_remove = ttk.Button(card, text=t("remove_library"), command=self.remove_library)
+        self.btn_remove.pack(side="right", padx=(0, 8))
+        ttk.Button(card, text="＋  " + t("add_library"), command=self.add_library).pack(side="right", padx=(0, 8))
         self.update_library_label()
 
         # stato
@@ -741,15 +745,34 @@ class App(tk.Tk):
         self.banner_bar.configure(bg=accent)
         self.banner_text.configure(bg=bg, text=text)
 
+    def library_names(self):
+        """Nome da mostrare per ogni libreria: la cartella, più quella che la contiene se due si chiamano uguali;
+        ⚠ se la cartella non si trova (disco non collegato, cartella spostata)."""
+        libs = self.settings.get("libraries", [])
+        base = [os.path.basename(p) or p for p in libs]
+        names = []
+        for path, name in zip(libs, base):
+            if base.count(name) > 1:
+                name = f"{name}  ({os.path.basename(os.path.dirname(path))})"
+            names.append(name if is_library(path) else "⚠  " + name)
+        return names
+
     def update_library_label(self):
+        libs = self.settings.get("libraries", [])
         lib = self.settings.get("library") or ""
-        self.lib_name.configure(text=os.path.basename(lib) if lib else t("no_library"))
+        self.lib_combo.configure(values=self.library_names())
+        if lib in libs:
+            self.lib_combo.current(libs.index(lib))
+        else:
+            self.lib_combo.set(t("no_library"))
         self.lib_path.configure(text=lib or t("no_library_hint"))
+        self.btn_remove.state(["!disabled"] if lib in libs else ["disabled"])
 
     def set_busy(self, busy, text=None):
         if busy:
             self.go.state(["disabled"])
             self.btn_refresh.state(["disabled"])
+            self.lib_combo.state(["disabled"])
             self.progress.pack(side="right", padx=(0, 12))
             self.progress.start(12)
             self.config(cursor="watch")
@@ -759,6 +782,7 @@ class App(tk.Tk):
             self.progress.stop()
             self.progress.pack_forget()
             self.btn_refresh.state(["!disabled"])
+            self.lib_combo.state(["!disabled", "readonly"])
             self.config(cursor="")
 
     # ---- aggiornamenti
@@ -824,7 +848,7 @@ class App(tk.Tk):
         self.set_busy(False)
         if error:
             Dialog.ask(self, t("upd_title"), t("upd_error", error=error), None, level="error")
-            self.refresh() if is_library(self.settings.get("library")) else self.set_status("info", t("st_choose"))
+            self.refresh()
             return
         log(f"update {VERSION} -> {self.release['version']}: {path}")
         updater.launch_installer(path)
@@ -846,7 +870,7 @@ class App(tk.Tk):
             self.outer.destroy()
             self._build()
             self.title(APP_NAME)
-            self.refresh() if is_library(self.settings.get("library")) else self.set_status("info", t("st_choose"))
+            self.refresh()
 
     def cli(self):
         cli = self.settings.get("cli") or DEFAULT_CLI
@@ -860,8 +884,9 @@ class App(tk.Tk):
             return self.settings["cli"]
         return None
 
-    def choose(self):
-        start = self.settings.get("library") or os.path.expanduser("~")
+    def add_library(self):
+        current = self.settings.get("library")
+        start = os.path.dirname(current) if current else os.path.expanduser("~")
         lib = filedialog.askdirectory(title=t("pick_library"), initialdir=start)
         if not lib:
             return
@@ -869,13 +894,57 @@ class App(tk.Tk):
         if not is_library(lib):
             Dialog.ask(self, APP_NAME, t("pick_library"), t("not_library"), level="error")
             return
-        self.settings["library"] = lib
+        libs = self.settings.setdefault("libraries", [])
+        known = next((p for p in libs if os.path.normcase(p) == os.path.normcase(lib)), None)
+        if known is None:  # già in elenco: ci si sposta su quella
+            libs.append(lib)
+        self.switch_library(known or lib)
+
+    def remove_library(self):
+        lib = self.settings.get("library")
+        libs = self.settings.get("libraries", [])
+        if lib not in libs:
+            return
+        name = self.library_names()[libs.index(lib)].replace("⚠  ", "")
+        answer = Dialog.ask(self, APP_NAME, t("remove_library_head", name=name), t("remove_library_body"),
+                            level="warn", buttons=[("cancel", t("btn_cancel"), False), ("remove", t("btn_remove"), True)],
+                            default="cancel")
+        if answer != "remove":
+            return
+        index = libs.index(lib)
+        libs.remove(lib)
+        self.switch_library(libs[min(index, len(libs) - 1)] if libs else None)
+
+    def on_library_selected(self, _event=None):
+        libs = self.settings.get("libraries", [])
+        i = self.lib_combo.current()
+        if 0 <= i < len(libs) and libs[i] != self.settings.get("library"):
+            self.switch_library(libs[i])
+
+    def switch_library(self, lib):
+        if lib:
+            self.settings["library"] = lib
+        else:
+            self.settings.pop("library", None)
         save_settings(self.settings)
         self.refresh()
 
+    def clear_list(self):
+        self.tree.delete(*self.tree.get_children())
+        self.rows.clear()
+        self.plan = []
+        self.show_preview(None)
+        for var in self.stat_vars.values():
+            var.set("–")
+        self.go.state(["disabled"])
+
     def refresh(self):
         self.update_library_label()
+        self.clear_list()
         lib = self.settings.get("library")
+        if not lib:
+            self.set_status("info", t("st_choose"))
+            return
         if not is_library(lib):
             self.set_status("warn", t("st_lib_gone"))
             return
@@ -886,12 +955,14 @@ class App(tk.Tk):
             try:
                 plan = build_plan(lib)
                 reason = library_open_reason(lib)
-                self.after(0, self.show, plan, reason, None)
+                self.after(0, self.show, plan, reason, None, lib)
             except Exception as e:  # noqa: BLE001 — qualsiasi errore va mostrato all'utente
-                self.after(0, self.show, [], None, e)
+                self.after(0, self.show, [], None, e, lib)
         threading.Thread(target=work, daemon=True).start()
 
-    def show(self, plan, reason, error):
+    def show(self, plan, reason, error, lib=None):
+        if lib is not None and lib != self.settings.get("library"):
+            return  # nel frattempo si è passati a un'altra libreria: il suo caricamento è già partito
         self.set_busy(False)
         self.plan, self.reason = plan, reason
         if error:

@@ -30,15 +30,33 @@ TEXTS = {
                    "es": "Ninguna biblioteca seleccionada", "fr": "Aucune bibliothèque sélectionnée",
                    "pt": "Nenhuma biblioteca selecionada"},
     "no_library_hint": {
-        "it": "Premi «Cambia libreria…» per sceglierne una",
-        "en": "Click “Change library…” to choose one",
-        "de": "Klicke auf „Bibliothek wechseln…“, um eine auszuwählen",
-        "es": "Pulsa «Cambiar biblioteca…» para elegir una",
-        "fr": "Cliquez sur « Changer de bibliothèque… » pour en choisir une",
-        "pt": "Clique em «Mudar biblioteca…» para escolher uma",
+        "it": "Premi «Aggiungi libreria…» per aggiungerne una",
+        "en": "Click “Add library…” to add one",
+        "de": "Klicke auf „Bibliothek hinzufügen…“, um eine hinzuzufügen",
+        "es": "Pulsa «Añadir biblioteca…» para añadir una",
+        "fr": "Cliquez sur « Ajouter une bibliothèque… » pour en ajouter une",
+        "pt": "Clique em «Adicionar biblioteca…» para adicionar uma",
     },
-    "change_library": {"it": "Cambia libreria…", "en": "Change library…", "de": "Bibliothek wechseln…",
-                       "es": "Cambiar biblioteca…", "fr": "Changer de bibliothèque…", "pt": "Mudar biblioteca…"},
+    "add_library": {"it": "Aggiungi libreria…", "en": "Add library…", "de": "Bibliothek hinzufügen…",
+                    "es": "Añadir biblioteca…", "fr": "Ajouter une bibliothèque…", "pt": "Adicionar biblioteca…"},
+    "remove_library": {"it": "Togli dall'elenco", "en": "Remove from list", "de": "Aus der Liste entfernen",
+                       "es": "Quitar de la lista", "fr": "Retirer de la liste", "pt": "Remover da lista"},
+    "remove_library_head": {"it": "Togliere «{name}» dall'elenco?", "en": "Remove “{name}” from the list?",
+                            "de": "„{name}“ aus der Liste entfernen?", "es": "¿Quitar «{name}» de la lista?",
+                            "fr": "Retirer « {name} » de la liste ?", "pt": "Remover «{name}» da lista?"},
+    "remove_library_body": {
+        "it": "La libreria, le sue foto e i suoi backup non vengono toccati: potrai aggiungerla di nuovo quando vuoi.",
+        "en": "The library, its photos and its backups are not touched: you can add it again at any time.",
+        "de": "Bibliothek, Fotos und Sicherungen bleiben unverändert: Du kannst sie jederzeit wieder hinzufügen.",
+        "es": "La biblioteca, sus fotos y sus copias de seguridad no se tocan: puedes volver a añadirla cuando "
+              "quieras.",
+        "fr": "La bibliothèque, ses photos et ses sauvegardes ne sont pas modifiées : vous pourrez l'ajouter à "
+              "nouveau à tout moment.",
+        "pt": "A biblioteca, as respetivas fotos e cópias de segurança não são alteradas: pode voltar a adicioná-la "
+              "quando quiser.",
+    },
+    "btn_remove": {"it": "Togli", "en": "Remove", "de": "Entfernen", "es": "Quitar", "fr": "Retirer",
+                   "pt": "Remover"},
     "refresh": {"it": "Aggiorna", "en": "Refresh", "de": "Aktualisieren", "es": "Actualizar", "fr": "Actualiser",
                 "pt": "Atualizar"},
     "settings": {"it": "Impostazioni", "en": "Settings", "de": "Einstellungen", "es": "Ajustes", "fr": "Paramètres",
@@ -92,20 +110,33 @@ TEXTS = {
            "de": "Von der Festplatte löschen und Papierkorb leeren", "es": "Borrar del disco y vaciar la papelera",
            "fr": "Supprimer du disque et vider la corbeille", "pt": "Apagar do disco e esvaziar o lixo"},
     "st_choose": {
-        "it": "Scegli la cartella della libreria Lightcraft (quella che contiene catalog.snap).",
-        "en": "Choose the Lightcraft library folder (the one that contains catalog.snap).",
-        "de": "Wähle den Ordner der Lightcraft-Bibliothek (den, der catalog.snap enthält).",
-        "es": "Elige la carpeta de la biblioteca de Lightcraft (la que contiene catalog.snap).",
-        "fr": "Choisissez le dossier de la bibliothèque Lightcraft (celui qui contient catalog.snap).",
-        "pt": "Escolha a pasta da biblioteca Lightcraft (a que contém catalog.snap).",
+        "it": "Premi «Aggiungi libreria…» e scegli la cartella di una libreria Lightcraft (quella che contiene "
+              "catalog.snap). Puoi aggiungerne quante vuoi e passare dall'una all'altra dal menu.",
+        "en": "Click “Add library…” and choose the folder of a Lightcraft library (the one that contains "
+              "catalog.snap). You can add as many as you like and switch between them from the menu.",
+        "de": "Klicke auf „Bibliothek hinzufügen…“ und wähle den Ordner einer Lightcraft-Bibliothek (den, der "
+              "catalog.snap enthält). Du kannst beliebig viele hinzufügen und im Menü zwischen ihnen wechseln.",
+        "es": "Pulsa «Añadir biblioteca…» y elige la carpeta de una biblioteca de Lightcraft (la que contiene "
+              "catalog.snap). Puedes añadir tantas como quieras y cambiar entre ellas desde el menú.",
+        "fr": "Cliquez sur « Ajouter une bibliothèque… » et choisissez le dossier d'une bibliothèque Lightcraft "
+              "(celui qui contient catalog.snap). Vous pouvez en ajouter autant que vous voulez et passer de l'une à "
+              "l'autre depuis le menu.",
+        "pt": "Clique em «Adicionar biblioteca…» e escolha a pasta de uma biblioteca Lightcraft (a que contém "
+              "catalog.snap). Pode adicionar quantas quiser e alternar entre elas no menu.",
     },
     "st_lib_gone": {
-        "it": "La libreria scelta non si trova più. Scegline un'altra con «Cambia libreria…».",
-        "en": "The selected library can no longer be found. Choose another one with “Change library…”.",
-        "de": "Die gewählte Bibliothek ist nicht mehr auffindbar. Wähle mit „Bibliothek wechseln…“ eine andere.",
-        "es": "La biblioteca elegida ya no se encuentra. Elige otra con «Cambiar biblioteca…».",
-        "fr": "La bibliothèque choisie est introuvable. Choisissez-en une autre avec « Changer de bibliothèque… ».",
-        "pt": "A biblioteca escolhida já não é encontrada. Escolha outra com «Mudar biblioteca…».",
+        "it": "Questa libreria non si trova (cartella spostata o disco non collegato). Collega il disco e premi "
+              "«Aggiorna», oppure toglila dall'elenco.",
+        "en": "This library can't be found (folder moved or drive not connected). Connect the drive and click "
+              "“Refresh”, or remove it from the list.",
+        "de": "Diese Bibliothek wurde nicht gefunden (Ordner verschoben oder Laufwerk nicht verbunden). Verbinde das "
+              "Laufwerk und klicke auf „Aktualisieren“ oder entferne sie aus der Liste.",
+        "es": "No se encuentra esta biblioteca (carpeta movida o unidad no conectada). Conecta la unidad y pulsa "
+              "«Actualizar», o quítala de la lista.",
+        "fr": "Cette bibliothèque est introuvable (dossier déplacé ou lecteur non connecté). Connectez le lecteur et "
+              "cliquez sur « Actualiser », ou retirez-la de la liste.",
+        "pt": "Esta biblioteca não foi encontrada (pasta movida ou unidade não ligada). Ligue a unidade e clique em "
+              "«Atualizar», ou remova-a da lista.",
     },
     "st_reading": {"it": "Leggo il cestino della libreria…", "en": "Reading the library's trash…",
                    "de": "Papierkorb der Bibliothek wird gelesen…", "es": "Leyendo la papelera de la biblioteca…",

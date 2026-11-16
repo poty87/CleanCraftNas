@@ -78,6 +78,8 @@ def setup_theme(root):
     st.configure("Stat.TLabel", font=root.f_stat)
     st.configure("Treeview", rowheight=30, font=root.f_body)
     st.configure("Treeview.Heading", font=root.f_small)
+    # l'elenco che si apre dai menu a tendina è un Listbox Tk: va allineato a mano ai caratteri dell'app
+    root.option_add("*TCombobox*Listbox.font", root.f_body)
 
 
 def center_on(window, master):
