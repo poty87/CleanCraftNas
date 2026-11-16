@@ -27,8 +27,8 @@ import i18n
 import updater
 from i18n import registry_value, t
 from translations import DATE_FORMATS, LANGUAGES
-from ui_theme import (LEVELS, MUTED, TEXT, Dialog, center_on, dark_title_bar, dpi_aware, set_icon,
-                      setup_theme)
+from ui_theme import (LEVELS, MUTED, TEXT, Dialog, attach_scrollbars, center_on, dark_title_bar, dpi_aware,
+                      set_icon, setup_theme)
 from version import APP_NAME, VERSION
 
 LOCAL = os.environ.get("LOCALAPPDATA") or os.path.expanduser("~")
@@ -594,10 +594,7 @@ class BackupsDialog(tk.Toplevel):
                                              ("folder", "   " + t("col_folder"), 380, "w", True)):
             self.tree.heading(c, text=title, anchor=anchor)
             self.tree.column(c, width=w, minwidth=60, anchor=anchor, stretch=stretch)
-        sb = ttk.Scrollbar(listf, orient="vertical", command=self.tree.yview)
-        self.tree.configure(yscrollcommand=sb.set)
-        self.tree.pack(side="left", fill="both", expand=True)
-        sb.pack(side="right", fill="y")
+        attach_scrollbars(self.tree)
         self.tree.bind("<<TreeviewSelect>>", lambda e: self.update_buttons())
         self.bind("<Escape>", lambda e: self.destroy())
 
@@ -767,7 +764,9 @@ class App(tk.Tk):
         self.btn_columns = ttk.Button(legend, text="☰  " + t("columns_btn"), command=self.columns_menu_at_button)
         self.btn_columns.pack(side="right")
         ttk.Label(legend, text=t("legend_hint"), style="Muted.TLabel").pack(side="right", padx=(0, 12))
-        self.tree = ttk.Treeview(listf, columns=COLUMN_IDS, show="headings", selectmode="extended")
+        box = ttk.Frame(listf)  # elenco e barre di scorrimento, disposti con grid
+        box.pack(fill="both", expand=True)
+        self.tree = ttk.Treeview(box, columns=COLUMN_IDS, show="headings", selectmode="extended")
         for c, key, w, anchor, stretch in COLUMNS:
             self.tree.heading(c, anchor=anchor, command=lambda c=c: self.sort_by(c))
             self.tree.column(c, width=w, minwidth=60, anchor=anchor, stretch=stretch)
@@ -777,10 +776,7 @@ class App(tk.Tk):
         for action, (fg, bg) in ROW_COLORS.items():
             self.tree.tag_configure(action, foreground=fg, background=bg)
         self.tree.tag_configure("companion", foreground=MUTED)  # dopo i colori: vince sul testo
-        sb = ttk.Scrollbar(listf, orient="vertical", command=self.tree.yview)
-        self.tree.configure(yscrollcommand=sb.set)
-        self.tree.pack(side="left", fill="both", expand=True)
-        sb.pack(side="right", fill="y")
+        attach_scrollbars(self.tree)
         self.tree.bind("<<TreeviewSelect>>", self.on_select)
         self.tree.bind("<Button-3>", self.right_click)
         self.tree.bind("<App>", self.row_menu)  # tasto menu della tastiera
