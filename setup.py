@@ -120,6 +120,9 @@ setup(
             "include_files": [(ICON, "assets/icon.ico")],
             # http ed email servono a urllib per il controllo degli aggiornamenti
             "excludes": ["unittest", "pydoc", "xmlrpc"],
+            # nei .pyc resta il percorso dei sorgenti: si toglie, così nel pacchetto non finiscono le cartelle
+            # del PC su cui si compila
+            "replace_paths": [("*", ""), (str(ROOT / "src"), ""), (str(ROOT), "")],
             "include_msvcr": True,
         },
         "bdist_msi": {
@@ -133,5 +136,7 @@ setup(
             "summary_data": {"author": "poty87", "comments": f"{APP_NAME} installer"},
         },
     },
-    executables=[Executable(str(ROOT / "src" / "cleancraftnas.py"), base="gui", target_name=EXE, icon=ICON)],
+    # percorso relativo (build.ps1 parte dalla cartella del progetto): cx_Freeze lo usa nel nome di un
+    # componente dell'MSI, e un percorso assoluto ci metterebbe dentro le cartelle del PC su cui si compila
+    executables=[Executable("src/cleancraftnas.py", base="gui", target_name=EXE, icon=ICON)],
 )
