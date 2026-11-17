@@ -18,6 +18,7 @@ import tempfile
 import threading
 import time
 import tkinter as tk
+from concurrent.futures import ThreadPoolExecutor
 from ctypes import wintypes
 from tkinter import filedialog, ttk
 
@@ -145,6 +146,39 @@ def file_times(path):
         return None, None
 
 
+def io_workers():
+    """Thread per leggere dal disco: il doppio dei core logici, tra 4 e 16. Il lavoro aspetta soprattutto il NAS (non la
+    CPU), quindi più thread sovrappongono le attese; oltre 16 un NAS domestico non risponde più in fretta."""
+    return max(4, min(16, 2 * (os.cpu_count() or 2)))
+
+
+def list_folder(folder):
+    """File di una cartella: {nome in minuscolo: (nome, dimensione, creazione, modifica)}, oppure None se non si legge.
+
+    Un solo elenco dà anche dimensioni e date (su Windows arrivano insieme ai nomi), senza chiederle file per file."""
+    found = {}
+    try:
+        with os.scandir(folder) as entries:
+            for e in entries:
+                try:
+                    if e.is_file():
+                        st = e.stat()
+                        created = getattr(st, "st_birthtime", st.st_ctime)  # su Windows st_ctime è la creazione
+                        found[e.name.lower()] = (e.name, st.st_size, created, st.st_mtime)
+                except OSError:
+                    continue
+    except OSError:
+        return None
+    return found
+
+
+def list_folders(folders):
+    """Elenchi di più cartelle, letti in parallelo: {cartella normalizzata: elenco o None}."""
+    folders = sorted({os.path.normcase(f) for f in folders if f})
+    with ThreadPoolExecutor(max_workers=io_workers()) as pool:
+        return dict(zip(folders, pool.map(list_folder, folders)))
+
+
 def build_plan(lib):
     """Elenca le foto nel cestino e i file da cancellare per ciascuna."""
     cat = read_catalog(lib)
@@ -154,11 +188,27 @@ def build_plan(lib):
         s = p.get("source") or {}
         return s.get("path") if s.get("type") == "file" else None
 
+    # ogni cartella si legge una volta sola (prima si rileggeva per ogni foto: in una cartella del NAS con 20.000 file
+    # sono più di 20 minuti per 1000 foto), e le cartelle si leggono in parallelo
+    trashed = [p for p in photos if p.get("deleted")]
+    listings = list_folders(os.path.dirname(path_of(p)) for p in trashed if path_of(p))
+
+    def info(full):
+        """(nome, dimensione, creazione, modifica) del file, oppure None se non c'è."""
+        listing = listings.get(os.path.normcase(os.path.dirname(full)))
+        if listing is not None:
+            return listing.get(os.path.basename(full).lower())
+        try:  # cartella non elencabile: si chiede al file direttamente
+            st = os.stat(full)
+            return os.path.basename(full), st.st_size, st.st_ctime, st.st_mtime
+        except OSError:
+            return None
+
     # percorsi ancora usati da foto attive: quei file non si toccano mai
     active = {os.path.normcase(path_of(p)) for p in photos if not p.get("deleted") and path_of(p)}
     planned = set()  # un file compare una volta sola, anche se è il JPG di un'altra foto nel cestino
     plan = []
-    for p in sorted((p for p in photos if p.get("deleted")), key=lambda p: path_of(p) or ""):
+    for p in sorted(trashed, key=lambda p: path_of(p) or ""):
         path = path_of(p)
         meta = p.get("meta") or {}
         item = {"id": int(p["id"]), "name": p.get("file_name") or "", "path": path, "files": [], "note": None,
@@ -170,7 +220,7 @@ def build_plan(lib):
             item["note"] = "note_demo"
         elif os.path.normcase(path) in active:
             item["note"] = "note_shared"
-        elif not os.path.exists(path):
+        elif info(path) is None:
             item["note"] = "note_missing"
         elif os.path.normcase(path) in planned:
             item["note"] = "note_dup"
@@ -178,10 +228,14 @@ def build_plan(lib):
             item["files"].append(path)
             base = os.path.splitext(path)[0]
             folder = os.path.dirname(path)
-            try:
-                names = {n.lower(): n for n in os.listdir(folder)}
-            except OSError:
-                names = {}
+            listing = listings.get(os.path.normcase(folder))
+            if listing is not None:
+                names = {low: entry[0] for low, entry in listing.items()}
+            else:
+                try:
+                    names = {n.lower(): n for n in os.listdir(folder)}
+                except OSError:
+                    names = {}
             for ext in COMPANIONS:
                 for cand in (os.path.basename(base) + ext, os.path.basename(path) + ext):
                     real = names.get(cand.lower())
@@ -193,10 +247,15 @@ def build_plan(lib):
                             and full not in item["files"]:
                         item["files"].append(full)
         planned.update(os.path.normcase(f) for f in item["files"])
-        item["sizes"] = [os.path.getsize(f) for f in item["files"]]
+        details = {f: info(f) for f in item["files"]}
+        item["sizes"] = [details[f][1] if details[f] else 0 for f in item["files"]]
         item["bytes"] = sum(item["sizes"])
-        # date di creazione e ultima modifica di ogni file (lette qui, in background: sul NAS costano)
-        item["times"] = [file_times(f) for f in (item["files"] or [path])]
+        # date di creazione e ultima modifica di ogni file (dagli elenchi delle cartelle, già letti)
+        timed = []
+        for f in item["files"] or ([path] if path else []):
+            entry = details.get(f) or info(f)
+            timed.append((entry[2], entry[3]) if entry else (None, None))
+        item["times"] = timed or [(None, None)]
         # il file della foto c'è ancora sul disco? None per le foto dimostrative, che non hanno file
         item["present"] = None if not path else item["note"] != "note_missing"
         # cosa fare della foto: "full" = file dal disco e foto dal cestino, "trash" = solo dal cestino,
@@ -280,13 +339,33 @@ FO_DELETE = 3
 FOF_SILENT, FOF_NOCONFIRMATION, FOF_ALLOWUNDO, FOF_NOERRORUI = 0x4, 0x10, 0x40, 0x400
 
 
+DELETE_BATCH = 50  # file per ogni chiamata a Windows: meno chiamate, stesso cestino
+
+
 def delete_file(path):
     """Cestino di Windows per i dischi locali; sul NAS il file va nel cestino di Synology, se attivo."""
-    op = SHFILEOPSTRUCTW(wFunc=FO_DELETE, pFrom=path + "\0\0",
+    rc = delete_files([path])
+    if rc != 0 or os.path.exists(path):
+        raise OSError(f"code {rc}")
+
+
+def delete_files(paths):
+    """Sposta più file nel cestino con una sola operazione di Windows; restituisce il codice di Windows (0 = tutto ok).
+
+    Quali file sono davvero spariti lo dice solo un controllo dopo: con un errore alcuni possono essere già andati."""
+    op = SHFILEOPSTRUCTW(wFunc=FO_DELETE, pFrom="\0".join(paths) + "\0\0",
                          fFlags=FOF_SILENT | FOF_NOCONFIRMATION | FOF_ALLOWUNDO | FOF_NOERRORUI)
     rc = ctypes.windll.shell32.SHFileOperationW(ctypes.byref(op))
-    if rc != 0 or op.fAnyOperationsAborted or os.path.exists(path):
-        raise OSError(f"code {rc}")
+    return rc or (1 if op.fAnyOperationsAborted else 0)
+
+
+def existing(paths):
+    """{percorso: esiste?} per molti file, controllati in parallelo (sul NAS ogni controllo è un'attesa di rete)."""
+    paths = list(dict.fromkeys(paths))
+    if not paths:
+        return {}
+    with ThreadPoolExecutor(max_workers=io_workers()) as pool:
+        return dict(zip(paths, pool.map(os.path.exists, paths)))
 
 
 # colonne dell'elenco: (id, testo, larghezza, allineamento, si allarga); i clic sulle intestazioni ordinano
@@ -411,6 +490,7 @@ def execute(lib, cli, plan, root, kept=BACKUPS_KEPT):
     log(f"--- cleanup of {lib} (backup: {backup})")
     removed, failed, deleted_files = [], [], 0
     missing, trash_only = [], []  # nomi delle foto tolte solo dal cestino: file già spariti / scelta dell'utente
+    to_delete = []  # foto i cui file vanno cancellati dal disco
     for item in plan:
         if item["action"] == "keep":
             continue
@@ -423,20 +503,38 @@ def execute(lib, cli, plan, root, kept=BACKUPS_KEPT):
                 trash_only.append(item["path"] or item["name"])
                 log(f"removed from trash only, file kept: {item['path']}")
             continue
-        ok = True
-        for f in item["files"]:
-            if not os.path.exists(f):
-                log(f"already gone {f}")
-                continue
-            try:
-                delete_file(f)
+        to_delete.append(item)
+    # i file si cancellano a blocchi (una chiamata a Windows ogni DELETE_BATCH file), poi si controlla quali sono
+    # davvero spariti; una foto esce dal cestino di LightCraft solo se tutti i suoi file sono andati
+    before = existing(f for item in to_delete for f in item["files"])
+    for f, present in before.items():
+        if not present:
+            log(f"already gone {f}")
+    queue = [f for f, present in before.items() if present]
+    errors = {}
+    for start in range(0, len(queue), DELETE_BATCH):
+        batch = queue[start:start + DELETE_BATCH]
+        rc = delete_files(batch)
+        after = existing(batch)
+        if rc:
+            # al primo file che non si può cancellare Windows lascia perdere il resto del blocco: quelli rimasti si
+            # riprovano uno alla volta, così in errore resta solo chi non si cancella davvero
+            for f in [f for f in batch if after[f]]:
+                code = delete_files([f])
+                after[f] = os.path.exists(f)
+                if after[f]:
+                    errors[f] = f"code {code}" if code else "still on disk"
+        for f in batch:
+            if after[f]:
+                errors.setdefault(f, "still on disk")
+                log(f"ERROR {f}: {errors[f]}")
+            else:
                 deleted_files += 1
                 log(f"deleted {f}")
-            except OSError as e:
-                ok = False
-                failed.append(f"{f}: {e}")
-                log(f"ERROR {f}: {e}")
-        if ok:
+    for item in to_delete:
+        bad = [f for f in item["files"] if f in errors]
+        failed += [f"{f}: {errors[f]}" for f in bad]
+        if not bad:
             removed.append(item["id"])
     if removed:
         remove_from_trash(cli, lib, removed)
