@@ -119,7 +119,9 @@ def run_cli(cli, lib, commands):
         except ValueError:
             pass
     if r.returncode != 0 or not replies or not all(x.get("ok") for x in replies):
-        detail = r.stderr.strip() or "; ".join(str(x.get("error")) for x in replies if not x.get("ok"))
+        # il motivo vero sta nella risposta del comando fallito; stderr dice solo "1 command(s) failed"
+        errors = [f"{x.get('command')}: {x.get('error')}" for x in replies if not x.get("ok")]
+        detail = "; ".join(errors) or r.stderr.strip()
         raise RuntimeError(f"lightcraft-cli ({r.returncode}): {detail}")
     return replies
 
@@ -377,6 +379,29 @@ def delete_backups(paths):
     return failed
 
 
+def remove_from_trash(cli, lib, ids):
+    """Toglie le foto dalla libreria con photo.deletePermanently.
+
+    Lightcraft accetta il comando solo se nella libreria c'è una selezione, anche quando riceve gli id: prima si
+    apre il cestino e si selezionano proprio quelle foto. La vista salvata (view.json) poi torna com'era, così
+    all'apertura di Lightcraft non ci si ritrova nel cestino.
+    """
+    view = os.path.join(lib, "view.json")
+    try:
+        with open(view, "rb") as f:
+            saved_view = f.read()
+    except OSError:
+        saved_view = None
+    try:
+        run_cli(cli, lib, [("library.source", {"kind": "recentlyDeleted"}),
+                           ("library.select", {"ids": ids}),
+                           ("photo.deletePermanently", {"ids": ids})])
+    finally:
+        if saved_view is not None:
+            with open(view, "wb") as f:
+                f.write(saved_view)
+
+
 def execute(lib, cli, plan, root, kept=BACKUPS_KEPT):
     """Cancella i file e toglie dalla libreria le foto i cui file non ci sono più (o restano ad altre foto)."""
     reason = library_open_reason(lib)
@@ -414,7 +439,7 @@ def execute(lib, cli, plan, root, kept=BACKUPS_KEPT):
         if ok:
             removed.append(item["id"])
     if removed:
-        run_cli(cli, lib, [("photo.deletePermanently", {"ids": removed})])
+        remove_from_trash(cli, lib, removed)
     left = sum(1 for p in read_catalog(lib)["photos"].values() if p.get("deleted"))
     log(f"removed from library: {len(removed)}, files deleted: {deleted_files}, errors: {len(failed)}, "
         f"not on disk: {len(missing)}, trash only: {len(trash_only)}, still in trash: {left}")
