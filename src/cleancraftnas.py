@@ -179,7 +179,7 @@ def list_folders(folders):
         return dict(zip(folders, pool.map(list_folder, folders)))
 
 
-def build_plan(lib):
+def build_plan(lib, jpeg_twins=True):
     """Elenca le foto nel cestino e i file da cancellare per ciascuna."""
     cat = read_catalog(lib)
     photos = cat["photos"].values()
@@ -236,7 +236,8 @@ def build_plan(lib):
                     names = {n.lower(): n for n in os.listdir(folder)}
                 except OSError:
                     names = {}
-            for ext in COMPANIONS:
+            # i JPEG con lo stesso nome (scatti RAW+JPEG non importati) si tolgono solo se richiesto; l'.xmp sempre
+            for ext in (COMPANIONS if jpeg_twins else tuple(e for e in COMPANIONS if e not in (".jpg", ".jpeg"))):
                 for cand in (os.path.basename(base) + ext, os.path.basename(path) + ext):
                     real = names.get(cand.lower())
                     if not real:
@@ -886,7 +887,14 @@ class App(tk.Tk):
             ttk.Label(legend, text=t("act_" + action), style="Muted.TLabel").pack(side="left", padx=(0, 14))
         self.btn_columns = ttk.Button(legend, text="☰  " + t("columns_btn"), command=self.columns_menu_at_button)
         self.btn_columns.pack(side="right")
+        # JPEG con lo stesso nome del raw (RAW+JPEG): via insieme al raw, oppure lasciati sul disco
+        self.jpeg_twins = tk.BooleanVar(value=bool(self.settings.get("jpeg_twins", True)))
+
         ttk.Label(legend, text=t("legend_hint"), style="Muted.TLabel").pack(side="right", padx=(0, 12))
+        opts = ttk.Frame(listf)
+        opts.pack(side="top", fill="x", pady=(0, 6))
+        ttk.Checkbutton(opts, text=t("opt_jpeg_twins"), variable=self.jpeg_twins,
+                        command=self.jpeg_twins_changed).pack(side="left")
         box = ttk.Frame(listf)  # elenco e barre di scorrimento, disposti con grid
         box.pack(fill="both", expand=True)
         self.tree = ttk.Treeview(box, columns=COLUMN_IDS, show="headings", selectmode="extended")
@@ -1129,6 +1137,11 @@ class App(tk.Tk):
             var.set("–")
         self.go.state(["disabled"])
 
+    def jpeg_twins_changed(self):
+        self.settings["jpeg_twins"] = bool(self.jpeg_twins.get())
+        save_settings(self.settings)
+        self.refresh()
+
     def refresh(self):
         self.update_library_label()
         self.clear_list()
@@ -1144,7 +1157,7 @@ class App(tk.Tk):
 
         def work():
             try:
-                plan = build_plan(lib)
+                plan = build_plan(lib, self.settings.get("jpeg_twins", True))
                 reason = library_open_reason(lib)
                 self.after(0, self.show, plan, reason, None, lib)
             except Exception as e:  # noqa: BLE001 — qualsiasi errore va mostrato all'utente
