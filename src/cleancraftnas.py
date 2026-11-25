@@ -72,18 +72,54 @@ def log(text):
 
 # ---------------------------------------------------------------- Lightcraft
 
-def lightcraft_running():
-    """Nomi dei processi Lightcraft in esecuzione (app o riga di comando)."""
+# i lightcraft-cli avviati da PresetCraftAppLicator ({pid: libreria su cui lavora, "" se nessuna}): lavora spesso in
+# sottofondo (volti, anteprime, modifiche dal telefono) e non è "Lightcraft aperto", se non sulla stessa libreria
+PCA_OWN_CLI = os.path.join(LOCAL, "PresetCraftAppLicator", "watch", "own-cli.json")
+
+
+def lightcraft_processes():
+    """[(nome, pid)] dei processi Lightcraft in esecuzione (app o riga di comando)."""
     out = subprocess.run(["tasklist", "/fo", "csv", "/nh"], capture_output=True, text=True,
                          creationflags=NO_WINDOW).stdout
-    names = {line.split('","')[0].strip('"').lower() for line in out.splitlines() if line}
-    return sorted(n for n in names if n in ("lightcraft.exe", "lightcraft-cli.exe"))
+    found = []
+    for line in out.splitlines():
+        cols = line.strip().strip('"').split('","')
+        if len(cols) > 1 and cols[0].lower() in ("lightcraft.exe", "lightcraft-cli.exe") and cols[1].isdigit():
+            found.append((cols[0].lower(), int(cols[1])))
+    return found
+
+
+def lightcraft_running():
+    """Nomi dei processi Lightcraft in esecuzione (app o riga di comando)."""
+    return sorted({name for name, _ in lightcraft_processes()})
+
+
+def pca_cli():
+    """I lightcraft-cli di PresetCraftAppLicator: {pid: libreria} (vuoto se non c'è o non si legge)."""
+    try:
+        with open(PCA_OWN_CLI, encoding="utf-8") as f:
+            data = json.load(f)
+        return {int(k): v or "" for k, v in data.items()} if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def same_path(a, b):
+    return os.path.normcase(os.path.normpath(a)) == os.path.normcase(os.path.normpath(b))
 
 
 def library_open_reason(lib):
     """Chiave del testo che spiega perché la libreria non si può modificare adesso, oppure None."""
-    if lightcraft_running():
-        return "st_open_app"
+    procs = lightcraft_processes()
+    pca = pca_cli() if procs else {}
+    busy = False
+    for name, pid in procs:
+        if name == "lightcraft-cli.exe" and pid in pca:
+            busy |= bool(pca[pid]) and same_path(pca[pid], lib)  # su un'altra libreria (o nessuna) non conta
+        else:
+            return "st_open_app"
+    if busy:
+        return "st_busy_pca"
     if os.path.exists(os.path.join(lib, "catalog.lock.owner")):
         return "st_open_lock"
     return None

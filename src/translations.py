@@ -192,6 +192,17 @@ TEXTS = {
         "fr": "Lightcraft est ouvert. Fermez-le puis cliquez sur « Actualiser ».",
         "pt": "O Lightcraft está aberto. Feche-o e clique em «Atualizar».",
     },
+    "st_busy_pca": {
+        "it": "PresetCraftAppLicator sta lavorando su questa libreria. Aspetta qualche secondo e premi «Aggiorna».",
+        "en": "PresetCraftAppLicator is working on this library. Wait a few seconds and click “Refresh”.",
+        "de": "PresetCraftAppLicator arbeitet gerade an dieser Bibliothek. Warte ein paar Sekunden und klicke auf "
+              "„Aktualisieren“.",
+        "es": "PresetCraftAppLicator está trabajando en esta biblioteca. Espera unos segundos y pulsa «Actualizar».",
+        "fr": "PresetCraftAppLicator travaille sur cette bibliothèque. Attendez quelques secondes puis cliquez sur "
+              "« Actualiser ».",
+        "pt": "O PresetCraftAppLicator está a trabalhar nesta biblioteca. Aguarde alguns segundos e clique em "
+              "«Atualizar».",
+    },
     "st_open_lock": {
         "it": "La libreria risulta ancora aperta. Se Lightcraft è chiuso, aprilo e richiudilo una volta.",
         "en": "The library still appears to be open. If Lightcraft is closed, open and close it once.",
