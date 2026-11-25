@@ -3,6 +3,13 @@
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
 
+# Mai compilare da una copia rimasta indietro: la 1.8.0 è uscita da una copia senza la 1.7.3 e ha perso le sue
+# ottimizzazioni (cestino di 1000+ foto: minuti invece di secondi). Serve tutto ciò che c'è su GitHub.
+git fetch --quiet origin
+if ($LASTEXITCODE -ne 0) { throw "git fetch failed: cannot check the copy is up to date" }
+git merge-base --is-ancestor origin/main HEAD
+if ($LASTEXITCODE -ne 0) { throw "This copy is behind origin/main: run 'git pull' before building" }
+
 if (-not (Test-Path .venv\Scripts\python.exe)) {
     py -3.13 -m venv .venv
 }

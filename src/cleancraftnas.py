@@ -191,7 +191,9 @@ def build_plan(lib, jpeg_twins=True):
     # ogni cartella si legge una volta sola (prima si rileggeva per ogni foto: in una cartella del NAS con 20.000 file
     # sono più di 20 minuti per 1000 foto), e le cartelle si leggono in parallelo
     trashed = [p for p in photos if p.get("deleted")]
+    t0 = time.time()
     listings = list_folders(os.path.dirname(path_of(p)) for p in trashed if path_of(p))
+    log(f"plan: {len(trashed)} in the trash, {len(listings)} folders listed in {time.time() - t0:.1f} s")
 
     def info(full):
         """(nome, dimensione, creazione, modifica) del file, oppure None se non c'è."""
@@ -1157,8 +1159,11 @@ class App(tk.Tk):
 
         def work():
             try:
+                t0 = time.time()
                 plan = build_plan(lib, self.settings.get("jpeg_twins", True))
+                log(f"plan: built in {time.time() - t0:.1f} s")
                 reason = library_open_reason(lib)
+                log(f"plan: library check done in {time.time() - t0:.1f} s")
                 self.after(0, self.show, plan, reason, None, lib)
             except Exception as e:  # noqa: BLE001 — qualsiasi errore va mostrato all'utente
                 self.after(0, self.show, [], None, e, lib)
