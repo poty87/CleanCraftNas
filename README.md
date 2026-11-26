@@ -4,7 +4,7 @@
 
 <p align="center">
 Delete from disk the photos you put in <b>Lightcraft</b>'s trash — even when they live on a NAS — and keep the trash in sync.<br>
-<a href="#-italiano">🇮🇹 Italiano</a> · <a href="https://github.com/poty87/CleanCraftNas/releases/latest">⬇ Download</a> · <a href="https://buymeacoffee.com/poty87">☕ Buy me a coffee</a>
+<a href="#-italiano">🇮🇹 Italiano</a> · <a href="https://github.com/poty87/CleanCraftNas/releases/latest">⬇ Download</a> · <a href="https://buymeacoffee.com/poty87">☕ Buy me a coffee</a> · <a href="https://paypal.me/poty87">PayPal</a>
 </p>
 
 ![CleanCraftNas main window](docs/main.png)
@@ -270,7 +270,7 @@ release tagged `vX.Y.Z`. Installed apps find it through the GitHub API. Never ch
 ## Support the project
 
 CleanCraftNas is free and will stay free: no subscriptions, no ads, no accounts. If it is useful to you and you would like to
-help me spend more time on it, you can [buy me a coffee](https://buymeacoffee.com/poty87). Thank you! ☕
+help me spend more time on it, you can [buy me a coffee](https://buymeacoffee.com/poty87) or donate with [PayPal](https://paypal.me/poty87). Thank you! ☕
 
 ## License
 
@@ -378,7 +378,7 @@ sostituirne una più nuova: l'installazione lo rifiuta, così non si torna indie
 ### Sostieni il progetto
 
 CleanCraftNas è gratuito e lo resterà: niente abbonamenti, pubblicità o account. Se ti è utile e vuoi aiutarmi a dedicarci
-più tempo, puoi [offrirmi un caffè](https://buymeacoffee.com/poty87). Grazie! ☕
+più tempo, puoi [offrirmi un caffè](https://buymeacoffee.com/poty87) o fare una donazione con [PayPal](https://paypal.me/poty87). Grazie! ☕
 
 ### Licenza
 

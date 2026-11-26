@@ -32,7 +32,21 @@ from ui_theme import (LEVELS, MUTED, TEXT, Dialog, attach_scrollbars, center_on,
                       set_icon, setup_theme)
 from version import APP_NAME, VERSION
 
-DONATE_URL = "https://buymeacoffee.com/poty87"
+DONATE = (("☕  Buy Me a Coffee", "https://buymeacoffee.com/poty87"), ("PayPal", "https://paypal.me/poty87"))
+
+
+def donate_menu(event):
+    """«Offrimi un caffè»: un piccolo menu con i due modi per donare; la scelta si apre nel browser."""
+    import webbrowser
+    root = event.widget._root()
+    m = tk.Menu(root, tearoff=0, bg="#2b2b2b", fg=TEXT, activebackground="#3d4a5c", activeforeground=TEXT,
+                bd=0, relief="flat", font=getattr(root, "f_body", None))
+    for name, url in DONATE:
+        m.add_command(label=name, command=lambda u=url: webbrowser.open(u))
+    try:
+        m.tk_popup(event.x_root, event.y_root)
+    finally:
+        m.grab_release()
 
 LOCAL = os.environ.get("LOCALAPPDATA") or os.path.expanduser("~")
 # impostazioni e registro dell'utente: l'app installata vive in una cartella che non si modifica
@@ -666,7 +680,7 @@ class SettingsDialog(tk.Toplevel):
         # donazioni: la pagina Buy Me a Coffee del progetto, nel browser
         coffee = ttk.Label(about, text=t("donate"), style="Link.TLabel", cursor="hand2")
         coffee.pack(side="right")
-        coffee.bind("<Button-1>", lambda e: __import__("webbrowser").open(DONATE_URL))
+        coffee.bind("<Button-1>", donate_menu)
         buttons = ttk.Frame(frame)
         buttons.pack(fill="x", pady=(18, 0))
         ttk.Button(buttons, text=t("btn_save"), style="Accent.TButton", command=self.save).pack(side="right")
@@ -912,7 +926,7 @@ class App(tk.Tk):
         ttk.Label(foot, text=f"v{VERSION}", style="Muted.TLabel").pack(side="left", padx=(12, 0))
         coffee = ttk.Label(foot, text=t("donate"), style="Link.TLabel", cursor="hand2")  # accanto alla versione
         coffee.pack(side="left", padx=(10, 0))
-        coffee.bind("<Button-1>", lambda e: __import__("webbrowser").open(DONATE_URL))
+        coffee.bind("<Button-1>", donate_menu)
         # compare solo se il controllo all'avvio trova una versione più nuova
         self.update_link = ttk.Label(foot, style="Link.TLabel", cursor="hand2")
         self.update_link.bind("<Button-1>", lambda e: self.offer_update())
