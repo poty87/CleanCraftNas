@@ -910,6 +910,9 @@ class App(tk.Tk):
         ttk.Button(foot, text=t("open_log"), command=self.open_log).pack(side="left")
         ttk.Button(foot, text=t("backups_btn"), command=self.open_backups).pack(side="left", padx=(8, 0))
         ttk.Label(foot, text=f"v{VERSION}", style="Muted.TLabel").pack(side="left", padx=(12, 0))
+        coffee = ttk.Label(foot, text=t("donate"), style="Link.TLabel", cursor="hand2")  # accanto alla versione
+        coffee.pack(side="left", padx=(10, 0))
+        coffee.bind("<Button-1>", lambda e: __import__("webbrowser").open(DONATE_URL))
         # compare solo se il controllo all'avvio trova una versione più nuova
         self.update_link = ttk.Label(foot, style="Link.TLabel", cursor="hand2")
         self.update_link.bind("<Button-1>", lambda e: self.offer_update())
