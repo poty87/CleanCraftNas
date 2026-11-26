@@ -1,7 +1,7 @@
 ﻿"""Dati del prodotto condivisi da app, installazione guidata e build."""
 
 APP_NAME = "CleanCraftNas"
-VERSION = "1.8.2"
+VERSION = "1.8.3"
 REPO = "poty87/CleanCraftNas"
 # non cambiarlo mai: è ciò che permette a una nuova versione di sostituire quella installata
 # (anche le versioni 1.0–1.1, che si chiamavano "Pulizia cestino Lightcraft")

@@ -326,6 +326,8 @@ TEXTS = {
                  "es": "Está en la carpeta de instalación de Lightcraft.",
                  "fr": "Il se trouve dans le dossier d'installation de Lightcraft.",
                  "pt": "Encontra-se na pasta de instalação do Lightcraft."},
+    "donate": {"it": "☕ Offrimi un caffè", "en": "☕ Buy me a coffee", "de": "☕ Spendier mir einen Kaffee",
+               "es": "☕ Invítame a un café", "fr": "☕ Offre-moi un café", "pt": "☕ Paga-me um café"},
     "about": {"it": "Versione {version}", "en": "Version {version}", "de": "Version {version}",
               "es": "Versión {version}", "fr": "Version {version}", "pt": "Versão {version}"},
 

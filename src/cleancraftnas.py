@@ -32,6 +32,8 @@ from ui_theme import (LEVELS, MUTED, TEXT, Dialog, attach_scrollbars, center_on,
                       set_icon, setup_theme)
 from version import APP_NAME, VERSION
 
+DONATE_URL = "https://buymeacoffee.com/poty87"
+
 LOCAL = os.environ.get("LOCALAPPDATA") or os.path.expanduser("~")
 # impostazioni e registro dell'utente: l'app installata vive in una cartella che non si modifica
 DATA_DIR = os.path.join(LOCAL, APP_NAME)
@@ -658,8 +660,13 @@ class SettingsDialog(tk.Toplevel):
             side="right")
         ttk.Label(frame, text=t("upd_hint"), style="Muted.TLabel").pack(anchor="w", pady=(4, 0))
 
-        ttk.Label(frame, text=f"{APP_NAME} · " + t("about", version=VERSION), style="Muted.TLabel").pack(
-            anchor="w", pady=(18, 0))
+        about = ttk.Frame(frame)
+        about.pack(fill="x", pady=(18, 0))
+        ttk.Label(about, text=f"{APP_NAME} · " + t("about", version=VERSION), style="Muted.TLabel").pack(side="left")
+        # donazioni: la pagina Buy Me a Coffee del progetto, nel browser
+        coffee = ttk.Label(about, text=t("donate"), style="Link.TLabel", cursor="hand2")
+        coffee.pack(side="right")
+        coffee.bind("<Button-1>", lambda e: __import__("webbrowser").open(DONATE_URL))
         buttons = ttk.Frame(frame)
         buttons.pack(fill="x", pady=(18, 0))
         ttk.Button(buttons, text=t("btn_save"), style="Accent.TButton", command=self.save).pack(side="right")
