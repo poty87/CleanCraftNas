@@ -3,7 +3,7 @@
 <h1 align="center">CleanCraftNas</h1>
 
 <p align="center">
-Delete from disk the photos you put in <b>Lightcraft</b>'s trash — even when they live on a NAS — and keep the trash in sync.<br>
+Delete from disk the photos you put in <b>LightCraft</b>'s trash — even when they live on a NAS — and keep the trash in sync.<br>
 <a href="#-italiano">🇮🇹 Italiano</a> · <a href="https://github.com/poty87/CleanCraftNas/releases/latest">⬇ Download</a> · <a href="https://buymeacoffee.com/poty87">☕ Buy me a coffee</a> · <a href="https://paypal.me/poty87">PayPal</a>
 </p>
 
@@ -15,32 +15,44 @@ Delete from disk the photos you put in <b>Lightcraft</b>'s trash — even when t
 ## Part of a suite
 
 This app is one of three independent tools that, together, build a **workflow for [LightCraft](https://github.com/storytold/lightcraft)
-with your photos on a NAS**: shoot, review on the phone, send home, import with the right colours, and keep the NAS clean.
-Each one works on its own; together they cover the whole path.
+with your photos on a NAS** — any NAS or server with an SMB shared folder (Synology, QNAP, TrueNAS, Unraid, a Windows
+share…): bring the photos home, import them with the right colours, browse and edit your library from the phone, and keep
+the NAS clean. Each one works on its own; together they cover the whole path.
 
 | App | Runs on | What it does |
 |---|---|---|
-| [**PresetCraftAppLicator**](https://github.com/poty87/PresetCraftAppLicator) | Windows PC | Gives LightCraft photos the camera profile of the style they were shot with. Watches a NAS folder and imports new photos automatically; applies the ratings, flags, metadata and presets chosen on the phone and tells the phone which photos are safe at home. |
-| [**ViewerCraftStar**](https://github.com/poty87/ViewerCraftStar) | Android | Review the raw files on the phone (flags, stars, labels, metadata, LightCraft presets with preview), send them to the NAS through Synology Drive, follow them until they are safe on the NAS and in LightCraft, then free the phone. |
+| [**PresetCraftAppLicator**](https://github.com/poty87/PresetCraftAppLicator) | Windows PC | Watches a NAS folder and imports new photos into LightCraft automatically; applies the ratings, flags, metadata and presets chosen on the phone; puts your libraries on the phone, with optional search by subject (AI). For Ricoh GR cameras it also gives each photo the camera profile of the style it was shot with. |
+| [**ViewerCraftStar**](https://github.com/poty87/ViewerCraftStar) | Android | Browse, search and edit your whole LightCraft libraries on the phone. Optionally import new photos on the phone too (from a Ricoh GR camera or from an external disk), review them (flags, stars, labels, metadata, presets with preview) and send them to the NAS, following them until they are safe at home. |
 | [**CleanCraftNas**](https://github.com/poty87/CleanCraftNas) | Windows PC | Deletes from disk — even on the NAS — the photos you put in LightCraft's trash, so the NAS stays in step with the library. |
 
-**The workflow**
+**Which cameras.** The suite works with the photos of most cameras: whatever LightCraft opens (DNG, CR2/CR3, NEF, ARW,
+ORF, RAF, JPEG…; PresetCraftAppLicator can also convert proprietary raws to DNG with the free Adobe DNG Converter). For now
+only two things are specific to **Ricoh GR** cameras:
+- giving each photo the camera profile of its picture style (PresetCraftAppLicator);
+- downloading photos straight from the camera over Wi-Fi (ViewerCraftStar). The same import also works from an external
+  disk or card reader plugged into the phone, with DNGs and JPEGs from any camera.
 
-1. Shoot, and let the raw files reach the phone (for example with the camera's own app).
-2. **ViewerCraftStar**: review them, then *Send to the NAS* — Synology Drive uploads the photos and the app writes your
-   choices next to them (`.xmp`).
-3. **PresetCraftAppLicator** (home PC): imports them into LightCraft with the right camera profile and applies your choices.
-4. Edit in LightCraft; the photos you don't want go to LightCraft's trash.
-5. **CleanCraftNas**: deletes those photos from the NAS too.
+**Two ways to bring photos home**
 
-**Away from home** the phone reaches the NAS through a VPN to your home network: see the
-[remote access guide](https://github.com/poty87/ViewerCraftStar/blob/main/docs/remote-access.md) (Synology *VPN Server* with OpenVPN on the NAS, *OpenVPN Connect* on the phone, port
-forwarding through one or two routers).
+- **The classic way, from the PC.** Copy the photos to the NAS as you always do (card reader, the camera's software, any
+  sync tool): PresetCraftAppLicator imports them from the watched folder. You can still browse, search, rate and edit them
+  from the phone, because the phone shows the whole library, not only what it sent.
+- **From the phone — a plus, not a requirement.** Import from the camera or an external disk, review on the phone and
+  *Send to the NAS*: the app moves the photos to a phone folder that your NAS's sync or backup app uploads (for example
+  Synology Drive, QNAP Qfile, Nextcloud, Syncthing) and writes your choices next to them (`.xmp`).
+
+Then edit in LightCraft; the photos you don't want go to LightCraft's trash, and **CleanCraftNas** deletes them from the
+NAS too.
+
+**Away from home** the phone reaches the NAS through a VPN to your home network (OpenVPN, built into ViewerCraftStar): see
+the [remote access guide](https://github.com/poty87/ViewerCraftStar/blob/main/docs/remote-access.md). The guide uses Synology's *VPN Server* as an example, but any
+OpenVPN server works (a router, another NAS brand, a PC).
 
 ## Why it exists
 
 [LightCraft](https://github.com/storytold/lightcraft) can work with photos **in place**: when you add a folder (for example a
-folder on a Synology NAS mapped as `Y:`), the library only *references* the files and never moves them.
+folder on a NAS mapped as `Y:`), the library only *references* the files and never moves them. CleanCraftNas works with
+the photos of any camera and with any NAS or shared folder Windows can reach.
 
 That is great until you want to get rid of a photo. In LightCraft (checked on version 0.21.1):
 
@@ -103,8 +115,8 @@ CleanCraftNas then:
 - It **refuses to run while LightCraft is open** (app or `lightcraft-cli`), and checks again right before deleting.
 - A file is **never deleted if a photo still in the library uses it** (for example the original of a virtual copy you
   trashed).
-- Deletions are recoverable for a while: files on a **NAS** go to the **Synology recycle bin** (`#recycle`, if it is enabled on
-  the shared folder), files on the **PC** go to the **Windows Recycle Bin**.
+- Deletions are recoverable for a while: files on a **NAS** go to the NAS's **recycle bin** of the shared folder, if it
+  has one turned on (on Synology `#recycle`, on QNAP `@Recycle`), files on the **PC** go to the **Windows Recycle Bin**.
 - If a file can't be deleted, its photo **stays in the trash** and the error is shown and logged.
 - Every operation is written to a log (`%LOCALAPPDATA%\CleanCraftNas\cleancraftnas.log`, button **Open log**).
 
@@ -232,14 +244,15 @@ handle them badly. With a NAS named `MY_NAS`, Lightroom Classic listed the photo
 found", while Windows Explorer opened them fine; the same photos imported at once through the NAS IP address, and after
 renaming the NAS to `MY-NAS`.
 
-If you rename the NAS (Synology: *Control Panel › Network › General › Server name*), update everything that used the old
+If you rename the NAS (for example on Synology: *Control Panel › Network › General › Server name*), update everything that used the old
 name: the mapped drive, the saved password (`cmdkey`), and the folders in your libraries (Lightroom: *Update Folder
 Location*; LightCraft: *Find Missing Photos* / *Locate Photo*).
 
-### 5. Turn on the Synology recycle bin
+### 5. Turn on the NAS recycle bin
 
-In DSM, *Control Panel › Shared Folder › Edit › Enable Recycle Bin*. Then the files CleanCraftNas deletes can still be
-recovered from the `#recycle` folder of the share for a while.
+Most NAS can keep deleted files in a recycle bin of the shared folder: turn it on, and the files CleanCraftNas deletes can
+still be recovered for a while. For example on Synology DSM: *Control Panel › Shared Folder › Edit › Enable Recycle Bin*
+(folder `#recycle`); on QNAP: *Control Panel › Network & File Services › Network Recycle Bin* (folder `@Recycle`).
 
 ## Build from source
 
@@ -286,32 +299,46 @@ poi svuota il cestino, così libreria e disco restano allineati.
 ### Fa parte di una suite
 
 Questa app è uno di tre programmi indipendenti che, insieme, creano un **flusso di lavoro per
-[LightCraft](https://github.com/storytold/lightcraft) con le foto su un NAS**: scatti, rivedi sul telefono, spedisci a casa,
-importi con i colori giusti e tieni pulito il NAS. Ognuno funziona anche da solo; insieme coprono tutto il percorso.
+[LightCraft](https://github.com/storytold/lightcraft) con le foto su un NAS** — qualsiasi NAS o server con una cartella
+condivisa SMB (Synology, QNAP, TrueNAS, Unraid, una condivisione di Windows…): porti a casa le foto, le importi con i colori
+giusti, sfogli e modifichi la libreria dal telefono e tieni pulito il NAS. Ognuno funziona anche da solo; insieme coprono
+tutto il percorso.
 
 | App | Dove gira | A cosa serve |
 |---|---|---|
-| [**PresetCraftAppLicator**](https://github.com/poty87/PresetCraftAppLicator) | PC Windows | Dà alle foto di LightCraft il profilo della fotocamera dello stile con cui le hai scattate. Osserva una cartella del NAS e importa da solo le foto nuove; applica stelle, bandierine, metadati e preset scelti sul telefono e dice al telefono quali foto sono al sicuro a casa. |
-| [**ViewerCraftStar**](https://github.com/poty87/ViewerCraftStar) | Android | Rivedi i raw sul telefono (bandierine, stelle, etichette, metadati, preset di LightCraft con anteprima), spediscili sul NAS tramite Synology Drive, seguili finché sono al sicuro sul NAS e in LightCraft, poi libera il telefono. |
+| [**PresetCraftAppLicator**](https://github.com/poty87/PresetCraftAppLicator) | PC Windows | Osserva una cartella del NAS e importa da solo in LightCraft le foto nuove; applica stelle, bandierine, metadati e preset scelti sul telefono; porta le tue librerie sul telefono, con la ricerca per soggetto (IA) facoltativa. Con le Ricoh GR dà anche a ogni foto il profilo della fotocamera dello stile con cui l'hai scattata. |
+| [**ViewerCraftStar**](https://github.com/poty87/ViewerCraftStar) | Android | Sfogli, cerchi e modifichi sul telefono le tue librerie LightCraft complete. Se vuoi, importi anche le foto nuove dal telefono (da una Ricoh GR o da un disco esterno), le rivedi (bandierine, stelle, etichette, metadati, preset con anteprima) e le spedisci sul NAS, seguendole finché sono al sicuro a casa. |
 | [**CleanCraftNas**](https://github.com/poty87/CleanCraftNas) | PC Windows | Cancella dal disco — anche dal NAS — le foto che hai messo nel cestino di LightCraft, così il NAS resta allineato alla libreria. |
 
-**Il flusso di lavoro**
+**Quali fotocamere.** La suite funziona con le foto della maggior parte delle fotocamere: tutto quello che LightCraft apre
+(DNG, CR2/CR3, NEF, ARW, ORF, RAF, JPEG…; PresetCraftAppLicator sa anche convertire i raw proprietari in DNG con il gratuito
+Adobe DNG Converter). Per ora sono specifiche delle **Ricoh GR** solo due cose:
+- dare a ogni foto il profilo della fotocamera del suo stile (PresetCraftAppLicator);
+- scaricare le foto direttamente dalla fotocamera via Wi-Fi (ViewerCraftStar). La stessa importazione funziona anche da un
+  disco esterno o un lettore di schede collegato al telefono, con DNG e JPEG di qualsiasi fotocamera.
 
-1. Scatti e fai arrivare i raw sul telefono (per esempio con l'app della fotocamera).
-2. **ViewerCraftStar**: li rivedi e premi *Spedisci al NAS* — Synology Drive carica le foto e l'app scrive accanto a ognuna
-   le tue scelte (`.xmp`).
-3. **PresetCraftAppLicator** (PC di casa): le importa in LightCraft con il profilo giusto e applica le tue scelte.
-4. Lavori in LightCraft; le foto che non vuoi finiscono nel cestino di LightCraft.
-5. **CleanCraftNas**: cancella quelle foto anche dal NAS.
+**Due modi per portare le foto a casa**
 
-**Fuori casa** il telefono raggiunge il NAS con una VPN verso la rete di casa: vedi la
-[guida all'accesso da fuori casa](https://github.com/poty87/ViewerCraftStar/blob/main/docs/remote-access.md#-italiano) (*VPN Server* di Synology con OpenVPN sul NAS, *OpenVPN Connect* sul
-telefono, inoltro della porta attraverso uno o due router).
+- **Quello classico, dal PC.** Copi le foto sul NAS come hai sempre fatto (lettore di schede, programma della fotocamera,
+  qualsiasi strumento di sincronizzazione): PresetCraftAppLicator le importa dalla cartella osservata. Dal telefono puoi
+  comunque sfogliarle, cercarle, dare stelle e modificarle, perché il telefono mostra tutta la libreria, non solo quello
+  che ha spedito lui.
+- **Dal telefono — un plus, non un obbligo.** Importi dalla fotocamera o da un disco esterno, rivedi sul telefono e premi
+  *Spedisci al NAS*: l'app sposta le foto in una cartella del telefono che l'app di sincronizzazione o backup del tuo NAS
+  carica (per esempio Synology Drive, QNAP Qfile, Nextcloud, Syncthing) e scrive accanto a ognuna le tue scelte (`.xmp`).
+
+Poi lavori in LightCraft; le foto che non vuoi finiscono nel cestino di LightCraft e **CleanCraftNas** le cancella anche
+dal NAS.
+
+**Fuori casa** il telefono raggiunge il NAS con una VPN verso la rete di casa (OpenVPN, dentro ViewerCraftStar): vedi la
+[guida all'accesso da fuori casa](https://github.com/poty87/ViewerCraftStar/blob/main/docs/remote-access.md#-italiano). La guida usa come esempio il *VPN Server* di
+Synology, ma va bene qualsiasi server OpenVPN (un router, un NAS di altra marca, un PC).
 
 ### Perché serve
 
 LightCraft lavora con le foto **dove si trovano**: se aggiungi una cartella del NAS (per esempio montata come `Y:`), la libreria
-si limita a fare riferimento ai file. Quando però vuoi eliminare una foto (verificato sulla versione 0.21.1):
+si limita a fare riferimento ai file. CleanCraftNas funziona con le foto di qualsiasi fotocamera e con qualsiasi NAS o
+cartella condivisa che Windows raggiunge. Quando però vuoi eliminare una foto (verificato sulla versione 0.21.1):
 
 - **Delete Photo** (tasto `Canc`) sposta la foto nel cestino (*Recently Deleted*);
 - **Empty Recently Deleted** e **Delete Permanently** la tolgono dalla libreria, **ma il file sul NAS resta**.
@@ -348,8 +375,9 @@ accanto alla libreria oppure nella cartella che scegli in **⚙ Impostazioni**, 
 pulsante **Backup…** li vedi tutti, con data e dimensione, e puoi eliminare quelli selezionati o tutti (finiscono nel Cestino).
 
 Protezioni: non parte se LightCraft è aperto; non cancella mai un file usato da una foto ancora in libreria (per esempio
-l'originale di una copia virtuale); i file sul NAS finiscono nel **cestino di Synology** (`#recycle`, se attivo sulla cartella
-condivisa) e quelli sul PC nel **Cestino di Windows**; ogni operazione è annotata nel registro.
+l'originale di una copia virtuale); i file sul NAS finiscono nel **cestino del NAS** della cartella condivisa, se è attivo
+(su Synology `#recycle`, su QNAP `@Recycle`), e quelli sul PC nel **Cestino di Windows**; ogni operazione è annotata nel
+registro.
 
 ### Installazione
 
@@ -399,8 +427,9 @@ più tempo, puoi [offrirmi un caffè](https://buymeacoffee.com/poty87) o fare un
    trovato"), mentre funzionava subito usando l'indirizzo IP del NAS o dopo averlo rinominato `MY-NAS`. Se rinomini il NAS,
    aggiorna unità di rete, password salvata e cartelle delle librerie (Lightroom: *Aggiorna posizione cartella*; LightCraft:
    *Find Missing Photos* / *Locate Photo*).
-5. **Attiva il cestino di Synology** sulla cartella condivisa (*Pannello di controllo › Cartella condivisa › Modifica › Attiva
-   Cestino*), così i file cancellati restano recuperabili per un po'.
+5. **Attiva il cestino del NAS** sulla cartella condivisa, così i file cancellati restano recuperabili per un po'. Per
+   esempio su Synology: *Pannello di controllo › Cartella condivisa › Modifica › Attiva Cestino* (cartella `#recycle`); su
+   QNAP: *Pannello di controllo › Servizi di rete e file › Cestino di rete* (cartella `@Recycle`).
 
 > CleanCraftNas è uno strumento indipendente, non realizzato né approvato dagli autori di LightCraft. Cancella file: tieni
 > sempre un backup delle tue foto.
