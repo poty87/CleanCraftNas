@@ -12,6 +12,8 @@ Delete from disk the photos you put in <b>LightCraft</b>'s trash — even when t
 > CleanCraftNas is an independent tool. It is not made by, affiliated with or endorsed by the authors of
 > [LightCraft](https://github.com/storytold/lightcraft).
 
+> 📖 **Documentation:** [user manual](docs/manual.md) · [suite setup guide](https://github.com/poty87/PresetCraftAppLicator/blob/main/docs/suite-guide.md) — from the NAS to the phone, step by step.
+
 ## Part of a suite
 
 This app is one of three independent tools that, together, build a **workflow for [LightCraft](https://github.com/storytold/lightcraft)
@@ -305,6 +307,8 @@ help me spend more time on it, you can [buy me a coffee](https://buymeacoffee.co
 ---
 
 ## 🇮🇹 Italiano
+
+> 📖 **Documentazione:** [manuale utente](docs/manuale.md) · [guida della suite](https://github.com/poty87/PresetCraftAppLicator/blob/main/docs/guida-suite.md) — dal NAS al telefono, passo per passo.
 
 **CleanCraftNas** cancella dal disco le foto che hai messo nel cestino di **LightCraft**, anche quando si trovano su un NAS, e
 poi svuota il cestino, così libreria e disco restano allineati.
