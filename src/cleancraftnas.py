@@ -390,7 +390,7 @@ DELETE_BATCH = 50  # file per ogni chiamata a Windows: meno chiamate, stesso ces
 
 
 def delete_file(path):
-    """Cestino di Windows per i dischi locali; sul NAS il file va nel cestino di Synology, se attivo."""
+    """Cestino di Windows per i dischi locali; sul NAS il file va nel cestino del NAS (se attivo sulla cartella condivisa)."""
     rc = delete_files([path])
     if rc != 0 or os.path.exists(path):
         raise OSError(f"code {rc}")

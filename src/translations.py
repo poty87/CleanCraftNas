@@ -254,22 +254,22 @@ TEXTS = {
                      "fr": "Supprimer {files} fichiers ({size}) ?", "pt": "Apagar {files} ficheiros ({size})?"},
     "confirm_body": {
         "it": "{photos} foto verranno tolte dalla libreria e i loro file cancellati dal disco.\n\nI file sul NAS "
-              "finiscono nel cestino di Synology (se è attivo sulla cartella condivisa), quelli sul PC nel Cestino "
+              "finiscono nel cestino del NAS (se è attivo sulla cartella condivisa), quelli sul PC nel Cestino "
               "di Windows. Prima viene fatto un backup della libreria.",
         "en": "{photos} photos will be removed from the library and their files deleted from disk.\n\nFiles on the "
-              "NAS go to the Synology recycle bin (if it is enabled on the shared folder), files on the PC go to the "
+              "NAS go to the NAS's recycle bin (if it is enabled on the shared folder), files on the PC go to the "
               "Windows Recycle Bin. The library is backed up first.",
         "de": "{photos} Fotos werden aus der Bibliothek entfernt und ihre Dateien von der Festplatte gelöscht.\n\n"
-              "Dateien auf dem NAS landen im Synology-Papierkorb (sofern er für den freigegebenen Ordner aktiviert "
+              "Dateien auf dem NAS landen im Papierkorb des NAS (sofern er für den freigegebenen Ordner aktiviert "
               "ist), Dateien auf dem PC im Windows-Papierkorb. Vorher wird die Bibliothek gesichert.",
         "es": "Se quitarán {photos} fotos de la biblioteca y sus archivos se borrarán del disco.\n\nLos archivos "
-              "del NAS van a la papelera de reciclaje de Synology (si está activada en la carpeta compartida) y los "
+              "del NAS van a la papelera de reciclaje del NAS (si está activada en la carpeta compartida) y los "
               "del PC a la Papelera de reciclaje de Windows. Antes se hace una copia de seguridad de la biblioteca.",
         "fr": "{photos} photos seront retirées de la bibliothèque et leurs fichiers supprimés du disque.\n\nLes "
-              "fichiers du NAS vont dans la corbeille Synology (si elle est activée sur le dossier partagé), ceux du "
+              "fichiers du NAS vont dans la corbeille du NAS (si elle est activée sur le dossier partagé), ceux du "
               "PC dans la Corbeille de Windows. La bibliothèque est d'abord sauvegardée.",
         "pt": "{photos} fotos serão removidas da biblioteca e os respetivos ficheiros apagados do disco.\n\nOs "
-              "ficheiros no NAS vão para a reciclagem do Synology (se estiver ativa na pasta partilhada) e os do PC "
+              "ficheiros no NAS vão para a reciclagem do NAS (se estiver ativa na pasta partilhada) e os do PC "
               "para a Reciclagem do Windows. Antes é feita uma cópia de segurança da biblioteca.",
     },
     "btn_delete": {"it": "Cancella", "en": "Delete", "de": "Löschen", "es": "Borrar", "fr": "Supprimer",
@@ -399,17 +399,17 @@ TEXTS = {
                            "fr": "Retirer {photos} photos de la corbeille ?",
                            "pt": "Remover {photos} fotos do lixo?"},
     "confirm_bins": {
-        "it": "I file sul NAS finiscono nel cestino di Synology (se è attivo sulla cartella condivisa), quelli sul PC "
+        "it": "I file sul NAS finiscono nel cestino del NAS (se è attivo sulla cartella condivisa), quelli sul PC "
               "nel Cestino di Windows.",
-        "en": "Files on the NAS go to the Synology recycle bin (if it is enabled on the shared folder), files on the "
+        "en": "Files on the NAS go to the NAS's recycle bin (if it is enabled on the shared folder), files on the "
               "PC go to the Windows Recycle Bin.",
-        "de": "Dateien auf dem NAS landen im Synology-Papierkorb (sofern er für den freigegebenen Ordner aktiviert "
+        "de": "Dateien auf dem NAS landen im Papierkorb des NAS (sofern er für den freigegebenen Ordner aktiviert "
               "ist), Dateien auf dem PC im Windows-Papierkorb.",
-        "es": "Los archivos del NAS van a la papelera de reciclaje de Synology (si está activada en la carpeta "
+        "es": "Los archivos del NAS van a la papelera de reciclaje del NAS (si está activada en la carpeta "
               "compartida) y los del PC a la Papelera de reciclaje de Windows.",
-        "fr": "Les fichiers du NAS vont dans la corbeille Synology (si elle est activée sur le dossier partagé), ceux "
+        "fr": "Les fichiers du NAS vont dans la corbeille du NAS (si elle est activée sur le dossier partagé), ceux "
               "du PC dans la Corbeille de Windows.",
-        "pt": "Os ficheiros no NAS vão para a reciclagem do Synology (se estiver ativa na pasta partilhada) e os do "
+        "pt": "Os ficheiros no NAS vão para a reciclagem do NAS (se estiver ativa na pasta partilhada) e os do "
               "PC para a Reciclagem do Windows.",
     },
     "confirm_backup": {"it": "Prima viene fatto un backup della libreria.", "en": "The library is backed up first.",
@@ -480,17 +480,17 @@ TEXTS = {
                             "fr": "Supprimer {count} sauvegardes ({size}) ?",
                             "pt": "Eliminar {count} cópias de segurança ({size})?"},
     "backups_delete_body": {
-        "it": "Finiscono nel Cestino di Windows, o nel cestino di Synology se sono sul NAS. Le foto e la libreria "
+        "it": "Finiscono nel Cestino di Windows, o nel cestino del NAS se sono sul NAS (se è attivo). Le foto e la libreria "
               "non vengono toccate.",
-        "en": "They go to the Windows Recycle Bin, or to the Synology recycle bin if they are on the NAS. Photos and "
+        "en": "They go to the Windows Recycle Bin, or to the NAS's recycle bin if they are on the NAS (if it is enabled). Photos and "
               "library are not touched.",
-        "de": "Sie landen im Windows-Papierkorb oder, wenn sie auf dem NAS liegen, im Synology-Papierkorb. Fotos und "
+        "de": "Sie landen im Windows-Papierkorb oder, wenn sie auf dem NAS liegen, im Papierkorb des NAS (sofern aktiviert). Fotos und "
               "Bibliothek bleiben unverändert.",
-        "es": "Van a la Papelera de reciclaje de Windows, o a la de Synology si están en el NAS. Las fotos y la "
+        "es": "Van a la Papelera de reciclaje de Windows, o a la del NAS si están en el NAS (si está activada). Las fotos y la "
               "biblioteca no se tocan.",
-        "fr": "Elles vont dans la Corbeille de Windows, ou dans celle de Synology si elles sont sur le NAS. Les "
+        "fr": "Elles vont dans la Corbeille de Windows, ou dans celle du NAS si elles sont sur le NAS (si elle est activée). Les "
               "photos et la bibliothèque ne sont pas modifiées.",
-        "pt": "Vão para a Reciclagem do Windows, ou para a do Synology se estiverem no NAS. As fotos e a biblioteca "
+        "pt": "Vão para a Reciclagem do Windows, ou para a do NAS se estiverem no NAS (se estiver ativa). As fotos e a biblioteca "
               "não são alteradas.",
     },
     "backups_delete_failed": {"it": "Non è stato possibile eliminare:", "en": "Could not delete:",
