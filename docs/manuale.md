@@ -46,7 +46,7 @@ serve.
   usata.
 - **Aggiorna** — rilegge il cestino. **⚙ Impostazioni**. **☰** — *Raw già convertiti in DNG…*
 - **I tre numeri:** *Foto nel cestino*, *File da cancellare*, *Spazio da liberare*.
-- **La riga di stato** dice se si può procedere: *Lightcraft è chiuso…*, *Lightcraft è aperto. Chiudilo e premi
+- **La riga di stato** dice se si può procedere: *LightCraft è chiuso…*, *LightCraft è aperto. Chiudilo e premi
   «Aggiorna»*, *PresetCraftAppLicator sta lavorando su questa libreria…*, *Il cestino di questa libreria è vuoto*.
 - **L'elenco** — una riga per file: la foto, il **JPEG** dello stesso scatto (RAW+JPEG) e il file **XMP** accanto. Il colore
   della riga dice cosa succederà ([capitolo 3](#3-scegliere-cosa-fare-di-ogni-foto)).
@@ -174,7 +174,7 @@ In fondo *☕ Offrimi un caffè* e la versione.
 
 | Problema | Soluzione |
 |---|---|
-| *Lightcraft è aperto* ma l'hai chiuso | Controlla che non ci sia un `lightcraft-cli` in esecuzione; premi **Aggiorna**. |
+| *LightCraft è aperto* ma l'hai chiuso | Controlla che non ci sia un `lightcraft-cli` in esecuzione; premi **Aggiorna**. |
 | *La libreria risulta ancora aperta* | LightCraft si è chiuso male: aprilo e richiudilo una volta. |
 | ⚠ accanto alla libreria | Il disco o il NAS non è collegato (`Y:` mancante): collegalo e premi **Aggiorna**. |
 | Le foto risultano *File già assente dal disco* | La lettera del NAS è cambiata o i file sono stati spostati: con la lettera giusta tornano visibili. Se i file non ci sono davvero, la foto viene solo tolta dal cestino. |

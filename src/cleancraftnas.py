@@ -1,7 +1,7 @@
 """CleanCraftNas.
 
 Cancella dal disco i file delle foto che sono nel cestino ("Recently Deleted") di una libreria
-Lightcraft e poi le toglie dalla libreria, così cestino e disco restano allineati.
+LightCraft e poi le toglie dalla libreria, così cestino e disco restano allineati.
 
 Le foto vengono lette da catalog.snap; le modifiche alla libreria passano sempre da
 lightcraft-cli (photo.deletePermanently), mai scrivendo i file della libreria a mano.
@@ -78,15 +78,15 @@ def log(text):
         f.write(f"{stamp} {text}\n")
 
 
-# ---------------------------------------------------------------- Lightcraft
+# ---------------------------------------------------------------- LightCraft
 
 # i lightcraft-cli avviati da PresetCraftAppLicator ({pid: libreria su cui lavora, "" se nessuna}): lavora spesso in
-# sottofondo (volti, anteprime, modifiche dal telefono) e non è "Lightcraft aperto", se non sulla stessa libreria
+# sottofondo (volti, anteprime, modifiche dal telefono) e non è "LightCraft aperto", se non sulla stessa libreria
 PCA_OWN_CLI = os.path.join(LOCAL, "PresetCraftAppLicator", "watch", "own-cli.json")
 
 
 def lightcraft_processes():
-    """[(nome, pid)] dei processi Lightcraft in esecuzione (app o riga di comando)."""
+    """[(nome, pid)] dei processi LightCraft in esecuzione (app o riga di comando)."""
     out = subprocess.run(["tasklist", "/fo", "csv", "/nh"], capture_output=True, text=True,
                          creationflags=NO_WINDOW).stdout
     found = []
@@ -98,7 +98,7 @@ def lightcraft_processes():
 
 
 def lightcraft_running():
-    """Nomi dei processi Lightcraft in esecuzione (app o riga di comando)."""
+    """Nomi dei processi LightCraft in esecuzione (app o riga di comando)."""
     return sorted({name for name, _ in lightcraft_processes()})
 
 
@@ -439,7 +439,7 @@ STAMP = "%Y-%m-%d %H.%M.%S"
 
 
 def backup_root(lib, settings):
-    """Cartella dei backup di una libreria: accanto alla libreria (la sua cartella resta di Lightcraft) o in quella
+    """Cartella dei backup di una libreria: accanto alla libreria (la sua cartella resta di LightCraft) o in quella
     scelta nelle Impostazioni, sempre in una sottocartella col nome della libreria."""
     base = settings.get("backup_dir") or os.path.dirname(lib)
     return os.path.join(base, BACKUP_PREFIX + os.path.basename(lib))
@@ -508,9 +508,9 @@ def delete_backups(paths):
 def remove_from_trash(cli, lib, ids):
     """Toglie le foto dalla libreria con photo.deletePermanently.
 
-    Lightcraft accetta il comando solo se nella libreria c'è una selezione, anche quando riceve gli id: prima si
+    LightCraft accetta il comando solo se nella libreria c'è una selezione, anche quando riceve gli id: prima si
     apre il cestino e si selezionano proprio quelle foto. La vista salvata (view.json) poi torna com'era, così
-    all'apertura di Lightcraft non ci si ritrova nel cestino.
+    all'apertura di LightCraft non ci si ritrova nel cestino.
     """
     view = os.path.join(lib, "view.json")
     try:
@@ -704,7 +704,7 @@ class SettingsDialog(tk.Toplevel):
 
     def save(self):
         cli = self.cli.get().strip()
-        # il percorso predefinito si accetta anche se Lightcraft non c'è ancora: lo si chiede al momento di cancellare
+        # il percorso predefinito si accetta anche se LightCraft non c'è ancora: lo si chiede al momento di cancellare
         if cli and os.path.normcase(cli) != os.path.normcase(DEFAULT_CLI) and not is_cli(cli):
             Dialog.ask(self, t("settings"), t("cli_bad"), cli, level="warn")
             return

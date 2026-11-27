@@ -25,7 +25,7 @@ from version import APP_NAME, REG_KEY, UPGRADE_CODE, VERSION  # noqa: E402
 
 EXE = "CleanCraftNas.exe"
 ICON = str(ROOT / "assets" / "icon.ico")
-DESCRIPTION = "Deletes from disk the photos in Lightcraft's trash and empties it"
+DESCRIPTION = "Deletes from disk the photos in LightCraft's trash and empties it"
 DESKTOP_COMPONENT_GUID = "{BEF6FC75-83C7-4047-AFE1-BAB2273C6D62}"  # fisso: identifica il collegamento tra le versioni
 
 shortcuts = [

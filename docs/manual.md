@@ -44,7 +44,7 @@ shortcut. It installs for your user only, without administrator rights, and alre
   can't be found right now (drive not connected, folder moved) is marked ⚠. The app reopens the last one used.
 - **Refresh** — reads the trash again. **⚙ Settings**. **☰** — *Raws already converted to DNG…*
 - **The three numbers:** *Photos in the trash*, *Files to delete*, *Space to free up*.
-- **The status line** says whether you can proceed: *Lightcraft is closed…*, *Lightcraft is open. Close it and click
+- **The status line** says whether you can proceed: *LightCraft is closed…*, *LightCraft is open. Close it and click
   “Refresh”*, *PresetCraftAppLicator is working on this library…*, *This library's trash is empty*.
 - **The list** — one row per file: the photo, the **JPEG** of the same shot (RAW+JPEG) and the **XMP** sidecar. The row
   colour says what will happen ([chapter 3](#3-choosing-what-happens-to-each-photo)).
@@ -172,7 +172,7 @@ At the bottom, *☕ Buy me a coffee* and the version.
 
 | Problem | Solution |
 |---|---|
-| *Lightcraft is open* but you closed it | Check that no `lightcraft-cli` is running; click **Refresh**. |
+| *LightCraft is open* but you closed it | Check that no `lightcraft-cli` is running; click **Refresh**. |
 | *The library still appears to be open* | LightCraft did not close cleanly: open and close it once. |
 | ⚠ next to the library | The drive or NAS is not connected (`Y:` missing): connect it and click **Refresh**. |
 | Photos show *File already gone from disk* | The NAS drive letter changed or the files were moved: with the right letter they show again. If the files really are gone, the photo is only removed from the trash. |

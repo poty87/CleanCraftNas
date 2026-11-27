@@ -15,14 +15,14 @@ DATE_FORMATS = {"it": "%d/%m/%Y", "en": "%d/%m/%Y", "de": "%d.%m.%Y", "es": "%d/
 
 TEXTS = {
     "subtitle": {
-        "it": "Cancella dal disco le foto che hai messo nel cestino di Lightcraft e poi svuota il cestino.",
-        "en": "Deletes from disk the photos you moved to Lightcraft's trash, then empties the trash.",
-        "de": "Löscht die Fotos, die du in Lightcrafts Papierkorb verschoben hast, von der Festplatte und leert "
+        "it": "Cancella dal disco le foto che hai messo nel cestino di LightCraft e poi svuota il cestino.",
+        "en": "Deletes from disk the photos you moved to LightCraft's trash, then empties the trash.",
+        "de": "Löscht die Fotos, die du in LightCrafts Papierkorb verschoben hast, von der Festplatte und leert "
               "anschließend den Papierkorb.",
-        "es": "Borra del disco las fotos que has enviado a la papelera de Lightcraft y después vacía la papelera.",
-        "fr": "Supprime du disque les photos que vous avez placées dans la corbeille de Lightcraft, puis vide la "
+        "es": "Borra del disco las fotos que has enviado a la papelera de LightCraft y después vacía la papelera.",
+        "fr": "Supprime du disque les photos que vous avez placées dans la corbeille de LightCraft, puis vide la "
               "corbeille.",
-        "pt": "Apaga do disco as fotos que colocou no lixo do Lightcraft e depois esvazia o lixo.",
+        "pt": "Apaga do disco as fotos que colocou no lixo do LightCraft e depois esvazia o lixo.",
     },
     "library": {"it": "LIBRERIA", "en": "LIBRARY", "de": "BIBLIOTHEK", "es": "BIBLIOTECA", "fr": "BIBLIOTHÈQUE",
                 "pt": "BIBLIOTECA"},
@@ -132,18 +132,18 @@ TEXTS = {
            "de": "Von der Festplatte löschen und Papierkorb leeren", "es": "Borrar del disco y vaciar la papelera",
            "fr": "Supprimer du disque et vider la corbeille", "pt": "Apagar do disco e esvaziar o lixo"},
     "st_choose": {
-        "it": "Premi «Aggiungi libreria…» e scegli la cartella di una libreria Lightcraft (quella che contiene "
+        "it": "Premi «Aggiungi libreria…» e scegli la cartella di una libreria LightCraft (quella che contiene "
               "catalog.snap). Puoi aggiungerne quante vuoi e passare dall'una all'altra dal menu.",
-        "en": "Click “Add library…” and choose the folder of a Lightcraft library (the one that contains "
+        "en": "Click “Add library…” and choose the folder of a LightCraft library (the one that contains "
               "catalog.snap). You can add as many as you like and switch between them from the menu.",
-        "de": "Klicke auf „Bibliothek hinzufügen…“ und wähle den Ordner einer Lightcraft-Bibliothek (den, der "
+        "de": "Klicke auf „Bibliothek hinzufügen…“ und wähle den Ordner einer LightCraft-Bibliothek (den, der "
               "catalog.snap enthält). Du kannst beliebig viele hinzufügen und im Menü zwischen ihnen wechseln.",
-        "es": "Pulsa «Añadir biblioteca…» y elige la carpeta de una biblioteca de Lightcraft (la que contiene "
+        "es": "Pulsa «Añadir biblioteca…» y elige la carpeta de una biblioteca de LightCraft (la que contiene "
               "catalog.snap). Puedes añadir tantas como quieras y cambiar entre ellas desde el menú.",
-        "fr": "Cliquez sur « Ajouter une bibliothèque… » et choisissez le dossier d'une bibliothèque Lightcraft "
+        "fr": "Cliquez sur « Ajouter une bibliothèque… » et choisissez le dossier d'une bibliothèque LightCraft "
               "(celui qui contient catalog.snap). Vous pouvez en ajouter autant que vous voulez et passer de l'une à "
               "l'autre depuis le menu.",
-        "pt": "Clique em «Adicionar biblioteca…» e escolha a pasta de uma biblioteca Lightcraft (a que contém "
+        "pt": "Clique em «Adicionar biblioteca…» e escolha a pasta de uma biblioteca LightCraft (a que contém "
               "catalog.snap). Pode adicionar quantas quiser e alternar entre elas no menu.",
     },
     "st_lib_gone": {
@@ -177,20 +177,20 @@ TEXTS = {
         "pt": "O lixo desta biblioteca está vazio: não há nada para apagar.",
     },
     "st_ready": {
-        "it": "Lightcraft è chiuso. Controlla l'elenco, poi premi «{go}».",
-        "en": "Lightcraft is closed. Check the list, then click “{go}”.",
-        "de": "Lightcraft ist geschlossen. Prüfe die Liste und klicke dann auf „{go}“.",
-        "es": "Lightcraft está cerrado. Revisa la lista y pulsa «{go}».",
-        "fr": "Lightcraft est fermé. Vérifiez la liste, puis cliquez sur « {go} ».",
-        "pt": "O Lightcraft está fechado. Verifique a lista e clique em «{go}».",
+        "it": "LightCraft è chiuso. Controlla l'elenco, poi premi «{go}».",
+        "en": "LightCraft is closed. Check the list, then click “{go}”.",
+        "de": "LightCraft ist geschlossen. Prüfe die Liste und klicke dann auf „{go}“.",
+        "es": "LightCraft está cerrado. Revisa la lista y pulsa «{go}».",
+        "fr": "LightCraft est fermé. Vérifiez la liste, puis cliquez sur « {go} ».",
+        "pt": "O LightCraft está fechado. Verifique a lista e clique em «{go}».",
     },
     "st_open_app": {
-        "it": "Lightcraft è aperto. Chiudilo e premi «Aggiorna».",
-        "en": "Lightcraft is open. Close it and click “Refresh”.",
-        "de": "Lightcraft ist geöffnet. Schließe es und klicke auf „Aktualisieren“.",
-        "es": "Lightcraft está abierto. Ciérralo y pulsa «Actualizar».",
-        "fr": "Lightcraft est ouvert. Fermez-le puis cliquez sur « Actualiser ».",
-        "pt": "O Lightcraft está aberto. Feche-o e clique em «Atualizar».",
+        "it": "LightCraft è aperto. Chiudilo e premi «Aggiorna».",
+        "en": "LightCraft is open. Close it and click “Refresh”.",
+        "de": "LightCraft ist geöffnet. Schließe es und klicke auf „Aktualisieren“.",
+        "es": "LightCraft está abierto. Ciérralo y pulsa «Actualizar».",
+        "fr": "LightCraft est ouvert. Fermez-le puis cliquez sur « Actualiser ».",
+        "pt": "O LightCraft está aberto. Feche-o e clique em «Atualizar».",
     },
     "st_busy_pca": {
         "it": "PresetCraftAppLicator sta lavorando su questa libreria. Aspetta qualche secondo e premi «Aggiorna».",
@@ -204,13 +204,13 @@ TEXTS = {
               "«Atualizar».",
     },
     "st_open_lock": {
-        "it": "La libreria risulta ancora aperta. Se Lightcraft è chiuso, aprilo e richiudilo una volta.",
-        "en": "The library still appears to be open. If Lightcraft is closed, open and close it once.",
-        "de": "Die Bibliothek scheint noch geöffnet zu sein. Wenn Lightcraft geschlossen ist, öffne und schließe "
+        "it": "La libreria risulta ancora aperta. Se LightCraft è chiuso, aprilo e richiudilo una volta.",
+        "en": "The library still appears to be open. If LightCraft is closed, open and close it once.",
+        "de": "Die Bibliothek scheint noch geöffnet zu sein. Wenn LightCraft geschlossen ist, öffne und schließe "
               "es einmal.",
-        "es": "La biblioteca sigue figurando como abierta. Si Lightcraft está cerrado, ábrelo y ciérralo una vez.",
-        "fr": "La bibliothèque semble encore ouverte. Si Lightcraft est fermé, ouvrez-le et refermez-le une fois.",
-        "pt": "A biblioteca ainda parece estar aberta. Se o Lightcraft estiver fechado, abra-o e feche-o uma vez.",
+        "es": "La biblioteca sigue figurando como abierta. Si LightCraft está cerrado, ábrelo y ciérralo una vez.",
+        "fr": "La bibliothèque semble encore ouverte. Si LightCraft est fermé, ouvrez-le et refermez-le une fois.",
+        "pt": "A biblioteca ainda parece estar aberta. Se o LightCraft estiver fechado, abra-o e feche-o uma vez.",
     },
     "st_working": {"it": "Cancello i file e aggiorno la libreria…", "en": "Deleting files and updating the library…",
                    "de": "Dateien werden gelöscht und die Bibliothek wird aktualisiert…",
@@ -218,26 +218,26 @@ TEXTS = {
                    "fr": "Suppression des fichiers et mise à jour de la bibliothèque…",
                    "pt": "A apagar ficheiros e a atualizar a biblioteca…"},
     "not_library": {
-        "it": "In questa cartella non c'è una libreria Lightcraft (manca catalog.snap).",
-        "en": "This folder does not contain a Lightcraft library (catalog.snap is missing).",
-        "de": "Dieser Ordner enthält keine Lightcraft-Bibliothek (catalog.snap fehlt).",
-        "es": "Esta carpeta no contiene una biblioteca de Lightcraft (falta catalog.snap).",
-        "fr": "Ce dossier ne contient pas de bibliothèque Lightcraft (catalog.snap est absent).",
-        "pt": "Esta pasta não contém uma biblioteca Lightcraft (falta catalog.snap).",
+        "it": "In questa cartella non c'è una libreria LightCraft (manca catalog.snap).",
+        "en": "This folder does not contain a LightCraft library (catalog.snap is missing).",
+        "de": "Dieser Ordner enthält keine LightCraft-Bibliothek (catalog.snap fehlt).",
+        "es": "Esta carpeta no contiene una biblioteca de LightCraft (falta catalog.snap).",
+        "fr": "Ce dossier ne contient pas de bibliothèque LightCraft (catalog.snap est absent).",
+        "pt": "Esta pasta não contém uma biblioteca LightCraft (falta catalog.snap).",
     },
-    "pick_library": {"it": "Cartella della libreria Lightcraft", "en": "Lightcraft library folder",
-                     "de": "Ordner der Lightcraft-Bibliothek", "es": "Carpeta de la biblioteca de Lightcraft",
-                     "fr": "Dossier de la bibliothèque Lightcraft", "pt": "Pasta da biblioteca Lightcraft"},
+    "pick_library": {"it": "Cartella della libreria LightCraft", "en": "LightCraft library folder",
+                     "de": "Ordner der LightCraft-Bibliothek", "es": "Carpeta de la biblioteca de LightCraft",
+                     "fr": "Dossier de la bibliothèque LightCraft", "pt": "Pasta da biblioteca LightCraft"},
     "cli_missing_title": {"it": "lightcraft-cli.exe non trovato", "en": "lightcraft-cli.exe not found",
                           "de": "lightcraft-cli.exe nicht gefunden", "es": "No se encuentra lightcraft-cli.exe",
                           "fr": "lightcraft-cli.exe introuvable", "pt": "lightcraft-cli.exe não encontrado"},
     "cli_missing": {
-        "it": "Indicami dove si trova lightcraft-cli.exe: è nella cartella di installazione di Lightcraft.",
-        "en": "Please show me where lightcraft-cli.exe is: it is in Lightcraft's installation folder.",
-        "de": "Bitte zeige mir, wo lightcraft-cli.exe liegt: Es befindet sich im Installationsordner von Lightcraft.",
-        "es": "Indica dónde está lightcraft-cli.exe: se encuentra en la carpeta de instalación de Lightcraft.",
-        "fr": "Indiquez où se trouve lightcraft-cli.exe : il est dans le dossier d'installation de Lightcraft.",
-        "pt": "Indique onde está o lightcraft-cli.exe: encontra-se na pasta de instalação do Lightcraft.",
+        "it": "Indicami dove si trova lightcraft-cli.exe: è nella cartella di installazione di LightCraft.",
+        "en": "Please show me where lightcraft-cli.exe is: it is in LightCraft's installation folder.",
+        "de": "Bitte zeige mir, wo lightcraft-cli.exe liegt: Es befindet sich im Installationsordner von LightCraft.",
+        "es": "Indica dónde está lightcraft-cli.exe: se encuentra en la carpeta de instalación de LightCraft.",
+        "fr": "Indiquez où se trouve lightcraft-cli.exe : il est dans le dossier d'installation de LightCraft.",
+        "pt": "Indique onde está o lightcraft-cli.exe: encontra-se na pasta de instalação do LightCraft.",
     },
     "cli_pick": {"it": "Dov'è lightcraft-cli.exe?", "en": "Where is lightcraft-cli.exe?",
                  "de": "Wo ist lightcraft-cli.exe?", "es": "¿Dónde está lightcraft-cli.exe?",
@@ -320,12 +320,12 @@ TEXTS = {
     "cli_label": {"it": "Percorso di lightcraft-cli.exe", "en": "Path to lightcraft-cli.exe",
                   "de": "Pfad zu lightcraft-cli.exe", "es": "Ruta de lightcraft-cli.exe",
                   "fr": "Chemin de lightcraft-cli.exe", "pt": "Caminho do lightcraft-cli.exe"},
-    "cli_hint": {"it": "Si trova nella cartella di installazione di Lightcraft.",
-                 "en": "It is in Lightcraft's installation folder.",
-                 "de": "Es befindet sich im Installationsordner von Lightcraft.",
-                 "es": "Está en la carpeta de instalación de Lightcraft.",
-                 "fr": "Il se trouve dans le dossier d'installation de Lightcraft.",
-                 "pt": "Encontra-se na pasta de instalação do Lightcraft."},
+    "cli_hint": {"it": "Si trova nella cartella di installazione di LightCraft.",
+                 "en": "It is in LightCraft's installation folder.",
+                 "de": "Es befindet sich im Installationsordner von LightCraft.",
+                 "es": "Está en la carpeta de instalación de LightCraft.",
+                 "fr": "Il se trouve dans le dossier d'installation de LightCraft.",
+                 "pt": "Encontra-se na pasta de instalação do LightCraft."},
     "donate": {"it": "☕ Offrimi un caffè", "en": "☕ Buy me a coffee", "de": "☕ Spendier mir einen Kaffee",
                "es": "☕ Invítame a un café", "fr": "☕ Offre-moi un café", "pt": "☕ Paga-me um café"},
     "about": {"it": "Versione {version}", "en": "Version {version}", "de": "Version {version}",
@@ -614,19 +614,19 @@ TEXTS = {
                        "fr": "Bienvenue dans l'installation de CleanCraftNas {version}",
                        "pt": "Bem-vindo à instalação do CleanCraftNas {version}"},
     "w_welcome_body": {
-        "it": "CleanCraftNas cancella dal disco le foto che hai messo nel cestino di Lightcraft, anche quando si "
+        "it": "CleanCraftNas cancella dal disco le foto che hai messo nel cestino di LightCraft, anche quando si "
               "trovano su un NAS, e poi svuota il cestino.\n\nScegli la lingua e premi «Avanti».",
-        "en": "CleanCraftNas deletes from disk the photos you moved to Lightcraft's trash, even when they live on a "
+        "en": "CleanCraftNas deletes from disk the photos you moved to LightCraft's trash, even when they live on a "
               "NAS, and then empties the trash.\n\nChoose your language and click “Next”.",
-        "de": "CleanCraftNas löscht die Fotos, die du in Lightcrafts Papierkorb verschoben hast, von der "
+        "de": "CleanCraftNas löscht die Fotos, die du in LightCrafts Papierkorb verschoben hast, von der "
               "Festplatte, auch wenn sie auf einem NAS liegen, und leert dann den Papierkorb.\n\nWähle deine Sprache "
               "und klicke auf „Weiter“.",
-        "es": "CleanCraftNas borra del disco las fotos que has enviado a la papelera de Lightcraft, aunque estén en "
+        "es": "CleanCraftNas borra del disco las fotos que has enviado a la papelera de LightCraft, aunque estén en "
               "un NAS, y después vacía la papelera.\n\nElige el idioma y pulsa «Siguiente».",
-        "fr": "CleanCraftNas supprime du disque les photos que vous avez placées dans la corbeille de Lightcraft, "
+        "fr": "CleanCraftNas supprime du disque les photos que vous avez placées dans la corbeille de LightCraft, "
               "même lorsqu'elles se trouvent sur un NAS, puis vide la corbeille.\n\nChoisissez votre langue et "
               "cliquez sur « Suivant ».",
-        "pt": "O CleanCraftNas apaga do disco as fotos que colocou no lixo do Lightcraft, mesmo quando estão num "
+        "pt": "O CleanCraftNas apaga do disco as fotos que colocou no lixo do LightCraft, mesmo quando estão num "
               "NAS, e depois esvazia o lixo.\n\nEscolha o idioma e clique em «Seguinte».",
     },
     "w_upgrade_head": {"it": "Aggiornamento di CleanCraftNas", "en": "Update CleanCraftNas",
