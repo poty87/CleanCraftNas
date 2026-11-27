@@ -26,7 +26,7 @@ from tkinter import filedialog, ttk
 import i18n
 from i18n import registry_value, t
 from translations import LANGUAGES
-from ui_theme import ACCENT, MUTED, TEXT, Dialog, dark_title_bar, dpi_aware, resource, set_icon, setup_theme
+from ui_theme import ACCENT, MUTED, TEXT, Dialog, dark_title_bar, dpi_aware, resource, reveal, set_icon, setup_theme
 from version import APP_NAME, UPGRADE_CODE, parse_version
 
 EXE = "CleanCraftNas.exe"
@@ -198,7 +198,7 @@ class Wizard(tk.Tk):
         self.geometry(f"{width}x{height}+{(self.winfo_screenwidth() - width) // 2}+"
                       f"{(self.winfo_screenheight() - height) // 3}")
         dark_title_bar(self)
-        self.deiconify()
+        reveal(self)
 
     def _mode(self):
         if not self.installed:
@@ -289,7 +289,7 @@ class Wizard(tk.Tk):
             self.heading(t("w_newer_head"), t("w_newer_body", old=old, new=self.version))
 
         if self.mode != "newer":
-            ttk.Label(self.body, text=t("lang_label").upper(), style="Muted.TLabel").pack(anchor="w", pady=(28, 4))
+            ttk.Label(self.body, text=t("lang_label"), style="CardTitle.TLabel").pack(anchor="w", pady=(28, 4))
             codes = ["auto", *LANGUAGES]
             combo = ttk.Combobox(self.body, values=[t("lang_auto"), *LANGUAGES.values()], state="readonly", width=36)
             combo.current(codes.index(self.lang_code) if self.lang_code in codes else 0)

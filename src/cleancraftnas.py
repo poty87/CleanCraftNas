@@ -28,8 +28,8 @@ import i18n
 import updater
 from i18n import registry_value, t
 from translations import DATE_FORMATS, LANGUAGES
-from ui_theme import (LEVELS, MUTED, TEXT, Dialog, attach_scrollbars, center_on, dark_title_bar, dpi_aware,
-                      set_icon, setup_theme)
+from ui_theme import (LEVELS, MUTED, TEXT, Dialog, attach_scrollbars, card, center_on, dark_title_bar, dpi_aware,
+                      popup_menu, reveal, set_icon, setup_theme)
 from version import APP_NAME, VERSION
 
 DONATE = (("☕  Buy Me a Coffee", "https://buymeacoffee.com/poty87"), ("💳  PayPal", "https://paypal.me/poty87"))
@@ -38,15 +38,7 @@ DONATE = (("☕  Buy Me a Coffee", "https://buymeacoffee.com/poty87"), ("💳  P
 def donate_menu(event):
     """«Offrimi un caffè»: un piccolo menu con i due modi per donare; la scelta si apre nel browser."""
     import webbrowser
-    root = event.widget._root()
-    m = tk.Menu(root, tearoff=0, bg="#2b2b2b", fg=TEXT, activebackground="#3d4a5c", activeforeground=TEXT,
-                bd=0, relief="flat", font=getattr(root, "f_body", None))
-    for name, url in DONATE:
-        m.add_command(label=name, command=lambda u=url: webbrowser.open(u))
-    try:
-        m.tk_popup(event.x_root, event.y_root)
-    finally:
-        m.grab_release()
+    popup_menu(event.widget, [(name, lambda u=url: webbrowser.open(u)) for name, url in DONATE], align="left")
 
 LOCAL = os.environ.get("LOCALAPPDATA") or os.path.expanduser("~")
 # impostazioni e registro dell'utente: l'app installata vive in una cartella che non si modifica
@@ -626,28 +618,28 @@ class SettingsDialog(tk.Toplevel):
         frame.pack(fill="both", expand=True)
         ttk.Label(frame, text=t("settings"), style="Title.TLabel").pack(anchor="w")
 
-        ttk.Label(frame, text=t("lang_label").upper(), style="Muted.TLabel").pack(anchor="w", pady=(18, 4))
+        box = card(frame, t("lang_label"), pady=(14, 0))
         self.lang_codes = ["auto", *LANGUAGES]
         names = [t("lang_auto"), *LANGUAGES.values()]
-        self.lang = ttk.Combobox(frame, values=names, state="readonly", width=40)
+        self.lang = ttk.Combobox(box, values=names, state="readonly", width=40)
         current = app.settings.get("language") or "auto"
         self.lang.current(self.lang_codes.index(current) if current in self.lang_codes else 0)
         self.lang.pack(anchor="w")
 
-        ttk.Label(frame, text=t("cli_label").upper(), style="Muted.TLabel").pack(anchor="w", pady=(18, 4))
-        row = ttk.Frame(frame)
+        box = card(frame, t("cli_label"))
+        row = ttk.Frame(box)
         row.pack(fill="x")
         self.cli = tk.StringVar(value=app.settings.get("cli") or DEFAULT_CLI)
         ttk.Entry(row, textvariable=self.cli, width=58).pack(side="left", fill="x", expand=True)
         ttk.Button(row, text=t("btn_browse"), command=self.browse).pack(side="left", padx=(8, 0))
-        ttk.Label(frame, text=t("cli_hint"), style="Muted.TLabel").pack(anchor="w", pady=(4, 0))
+        ttk.Label(box, text=t("cli_hint"), style="Muted.TLabel").pack(anchor="w", pady=(4, 0))
 
-        ttk.Label(frame, text=t("backup_label").upper(), style="Muted.TLabel").pack(anchor="w", pady=(18, 4))
+        box = card(frame, t("backup_label"))
         self.backup_mode = tk.StringVar(value="custom" if app.settings.get("backup_dir") else "library")
         self.backup_dir = tk.StringVar(value=app.settings.get("backup_dir") or "")
-        ttk.Radiobutton(frame, text=t("backup_next_to"), value="library", variable=self.backup_mode,
+        ttk.Radiobutton(box, text=t("backup_next_to"), value="library", variable=self.backup_mode,
                         command=self.backup_mode_changed).pack(anchor="w")
-        row = ttk.Frame(frame)
+        row = ttk.Frame(box)
         row.pack(fill="x", pady=(4, 0))
         ttk.Radiobutton(row, text=t("backup_custom"), value="custom", variable=self.backup_mode,
                         command=self.backup_mode_changed).pack(side="left")
@@ -655,27 +647,27 @@ class SettingsDialog(tk.Toplevel):
         self.backup_entry.pack(side="left", fill="x", expand=True, padx=(8, 0))
         self.backup_browse = ttk.Button(row, text=t("btn_browse"), command=self.browse_backup_dir)
         self.backup_browse.pack(side="left", padx=(8, 0))
-        row = ttk.Frame(frame)
+        row = ttk.Frame(box)
         row.pack(fill="x", pady=(8, 0))
         ttk.Label(row, text=t("backup_kept"), style="Body.TLabel").pack(side="left")
         self.kept = tk.IntVar(value=app.settings.get("backups_kept", BACKUPS_KEPT))
         ttk.Spinbox(row, from_=1, to=50, textvariable=self.kept, width=5, state="readonly").pack(side="left",
                                                                                                padx=(10, 0))
-        ttk.Label(frame, text=t("backup_hint"), style="Muted.TLabel", wraplength=560, justify="left").pack(
+        ttk.Label(box, text=t("backup_hint"), style="Muted.TLabel", wraplength=560, justify="left").pack(
             anchor="w", pady=(4, 0))
         self.backup_mode_changed()
 
-        ttk.Label(frame, text=t("updates_label").upper(), style="Muted.TLabel").pack(anchor="w", pady=(18, 4))
-        row = ttk.Frame(frame)
+        box = card(frame, t("updates_label"))
+        row = ttk.Frame(box)
         row.pack(fill="x")
         self.auto_update = tk.BooleanVar(value=app.settings.get("check_updates", True))
         ttk.Checkbutton(row, text=t("upd_auto"), variable=self.auto_update).pack(side="left")
         ttk.Button(row, text=t("upd_check_now"), command=lambda: app.check_updates(manual=True, parent=self)).pack(
             side="right")
-        ttk.Label(frame, text=t("upd_hint"), style="Muted.TLabel").pack(anchor="w", pady=(4, 0))
+        ttk.Label(box, text=t("upd_hint"), style="Muted.TLabel").pack(anchor="w", pady=(4, 0))
 
         about = ttk.Frame(frame)
-        about.pack(fill="x", pady=(18, 0))
+        about.pack(fill="x", pady=(14, 0))
         ttk.Label(about, text=f"{APP_NAME} · " + t("about", version=VERSION), style="Muted.TLabel").pack(side="left")
         # donazioni: la pagina Buy Me a Coffee del progetto, nel browser
         coffee = ttk.Label(about, text=t("donate"), style="Link.TLabel", cursor="hand2")
@@ -689,7 +681,7 @@ class SettingsDialog(tk.Toplevel):
 
         center_on(self, app)
         dark_title_bar(self)
-        self.deiconify()
+        reveal(self)
         self.grab_set()
 
     def browse(self):
@@ -783,7 +775,7 @@ class BackupsDialog(tk.Toplevel):
         self.load()
         center_on(self, app)
         dark_title_bar(self)
-        self.deiconify()
+        reveal(self)
         self.grab_set()
 
     def load(self):
@@ -860,8 +852,8 @@ class App(tk.Tk):
         self.previews = {}  # percorso -> immagine Pillow (o None se non leggibile)
         self._build()
         dark_title_bar(self)
-        self.deiconify()
-        self.after(150, self.refresh)
+        self.refresh()  # prima di mostrarla: compare già con la lettura avviata
+        reveal(self, max_ms=450)  # in un colpo solo, non a pezzi
         if self.settings.get("check_updates", True):
             self.after(2500, self.check_updates)  # in silenzio: se c'è una versione nuova compare il link in basso
 
@@ -873,7 +865,11 @@ class App(tk.Tk):
         # intestazione
         head = ttk.Frame(outer)
         head.pack(fill="x")
-        ttk.Button(head, text="⚙  " + t("settings"), command=self.open_settings).pack(side="right", anchor="n")
+        # in alto a destra, come nell'app del telefono: Impostazioni e ☰ per il resto (registro, backup)
+        self.btn_more = ttk.Button(head, text="☰", width=3, command=self.more_menu)
+        self.btn_more.pack(side="right", anchor="n")
+        ttk.Button(head, text="⚙  " + t("settings"), command=self.open_settings).pack(side="right", anchor="n",
+                                                                                      padx=(0, 8))
         ttk.Label(head, text=APP_NAME, style="Title.TLabel").pack(anchor="w")
         ttk.Label(head, text=t("subtitle"), style="Muted.TLabel").pack(anchor="w", pady=(2, 0))
 
@@ -882,7 +878,7 @@ class App(tk.Tk):
         card.pack(fill="x", pady=(16, 0))
         info = ttk.Frame(card)
         info.pack(side="left", fill="x", expand=True)
-        ttk.Label(info, text=t("library"), style="Muted.TLabel").pack(anchor="w")
+        ttk.Label(info, text=t("library").capitalize(), style="CardTitle.TLabel").pack(anchor="w")
         self.lib_combo = ttk.Combobox(info, state="readonly", width=48, font=self.f_strong)
         self.lib_combo.pack(anchor="w", pady=(4, 2))
         self.lib_combo.bind("<<ComboboxSelected>>", self.on_library_selected)
@@ -913,7 +909,7 @@ class App(tk.Tk):
             box = ttk.Frame(stats, style="Card.TFrame", padding=(16, 10))
             box.grid(row=0, column=i, sticky="nsew", padx=(0 if i == 0 else 10, 0))
             stats.columnconfigure(i, weight=1)
-            ttk.Label(box, text=t("stat_" + key).upper(), style="Muted.TLabel").pack(anchor="w")
+            ttk.Label(box, text=t("stat_" + key), style="Muted.TLabel").pack(anchor="w")
             var = tk.StringVar(value="–")
             ttk.Label(box, textvariable=var, style="Stat.TLabel").pack(anchor="w")
             self.stat_vars[key] = var
@@ -921,9 +917,7 @@ class App(tk.Tk):
         # piede: va messo prima dell'elenco, così l'elenco non lo spinge fuori dalla finestra
         foot = ttk.Frame(outer)
         foot.pack(side="bottom", fill="x", pady=(14, 0))
-        ttk.Button(foot, text=t("open_log"), command=self.open_log).pack(side="left")
-        ttk.Button(foot, text=t("backups_btn"), command=self.open_backups).pack(side="left", padx=(8, 0))
-        ttk.Label(foot, text=f"v{VERSION}", style="Muted.TLabel").pack(side="left", padx=(12, 0))
+        ttk.Label(foot, text=f"v{VERSION}", style="Muted.TLabel").pack(side="left")
         coffee = ttk.Label(foot, text=t("donate"), style="Link.TLabel", cursor="hand2")  # accanto alla versione
         coffee.pack(side="left", padx=(10, 0))
         coffee.bind("<Button-1>", donate_menu)
@@ -1232,6 +1226,7 @@ class App(tk.Tk):
     def show(self, plan, reason, error, lib=None):
         if lib is not None and lib != self.settings.get("library"):
             return  # nel frattempo si è passati a un'altra libreria: il suo caricamento è già partito
+        getattr(self, "reveal_now", lambda: None)()  # il contenuto c'è: la finestra si può mostrare
         self.set_busy(False)
         self.plan, self.reason = plan, reason
         if error:
@@ -1377,12 +1372,15 @@ class App(tk.Tk):
 
     def update_headings(self):
         col, reverse = self.sort
-        for c, key, width, _anchor, _s in COLUMNS:
+        for c, key, width, _anchor, stretch in COLUMNS:
             text = t(key) + ((" ▼" if reverse else " ▲") if c == col else "")
             # intestazioni sempre a sinistra e mai più strette del loro titolo (con la freccia), in ogni lingua
             need = self.f_small.measure(t(key) + " ▼") + 34  # titolo, freccia e margini dell'intestazione
             self.tree.heading(c, text=text, anchor="w")
-            self.tree.column(c, minwidth=need, width=max(width, need, self.tree.column(c, "width")))
+            # la colonna elastica (Cartella) prende lo spazio in più ma non scende sotto la sua larghezza: stringendo
+            # l'elenco compare la barra orizzontale invece di tagliare il testo
+            self.tree.column(c, minwidth=max(need, width) if stretch else need,
+                             width=max(width, need, self.tree.column(c, "width")))
 
     def sort_by(self, col):
         current, reverse = self.sort
@@ -1584,6 +1582,10 @@ class App(tk.Tk):
             Dialog.ask(self, APP_NAME, t("done_warn_title") if result["failed"] else t("done_title"), body,
                        level="warn" if result["failed"] else "ok", detail="\n\n".join(sections))
         self.refresh()
+
+    def more_menu(self):
+        """☰ in alto a destra: le finestre che servono di rado (registro, backup), come il menu ☰ del telefono."""
+        popup_menu(self.btn_more, [(t("open_log"), self.open_log), (t("backups_btn"), self.open_backups)])
 
     def open_backups(self):
         self.wait_window(BackupsDialog(self))
