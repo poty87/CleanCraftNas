@@ -769,6 +769,90 @@ TEXTS = {
                 "pt": "Tentar novamente"},
     "w_cancel_q": {"it": "Vuoi annullare l'installazione?", "en": "Cancel the setup?", "de": "Installation abbrechen?",
                    "es": "¿Cancelar la instalación?", "fr": "Annuler l'installation ?", "pt": "Cancelar a instalação?"},
+    "conv_btn": {"it": "Raw già convertiti in DNG…", "en": "Raws already converted to DNG…",
+                 "de": "Bereits in DNG umgewandelte Raws…", "es": "Raw ya convertidos a DNG…",
+                 "fr": "Raw déjà convertis en DNG…", "pt": "Raw já convertidos em DNG…"},
+    "conv_title": {"it": "Raw già convertiti in DNG", "en": "Raws already converted to DNG",
+                   "de": "Bereits in DNG umgewandelte Raws", "es": "Raw ya convertidos a DNG",
+                   "fr": "Raw déjà convertis en DNG", "pt": "Raw já convertidos em DNG"},
+    "conv_intro": {
+        "it": "I raw originali (CR2, NEF, ORF, ARW, RAF…) che hanno accanto un DNG fatto da loro, che è in libreria al loro "
+              "posto: per esempio quelli convertiti da PresetCraftAppLicator. Il raw non serve più alla libreria e si "
+              "può togliere dal disco. Compare qui solo se nessuna foto di nessuna libreria lo usa, se il DNG dice di "
+              "essere stato fatto proprio da quel file e se il DNG è senza perdita.",
+        "en": "The original raws (CR2, NEF, ORF, ARW, RAF…) that have next to them a DNG made from them, which is in the "
+              "library in their place: for example those converted by PresetCraftAppLicator. The library no longer needs "
+              "the raw and it can be removed from disk. It shows here only if no photo of any library uses it, the DNG "
+              "says it was made from that very file, and the DNG is lossless.",
+        "de": "Die Original-Raws (CR2, NEF, ORF, ARW, RAF…), neben denen ein daraus erstelltes DNG liegt, das an ihrer "
+              "Stelle in der Bibliothek ist – z. B. von PresetCraftAppLicator umgewandelt. Die Bibliothek braucht das Raw "
+              "nicht mehr; es kann vom Datenträger entfernt werden. Es erscheint hier nur, wenn kein Foto einer Bibliothek "
+              "es verwendet, das DNG angibt, aus genau dieser Datei erstellt zu sein, und das DNG verlustfrei ist.",
+        "es": "Los raw originales (CR2, NEF, ORF, ARW, RAF…) que tienen al lado un DNG hecho a partir de ellos, que está en "
+              "la biblioteca en su lugar: por ejemplo los convertidos por PresetCraftAppLicator. La biblioteca ya no "
+              "necesita el raw y se puede quitar del disco. Aparece aquí solo si ninguna foto de ninguna biblioteca lo "
+              "usa, si el DNG dice que se hizo de ese mismo archivo y si el DNG es sin pérdida.",
+        "fr": "Les raw originaux (CR2, NEF, ORF, ARW, RAF…) qui ont à côté d'eux un DNG fait à partir d'eux, présent dans la "
+              "bibliothèque à leur place : par exemple ceux convertis par PresetCraftAppLicator. La bibliothèque n'a plus "
+              "besoin du raw, qui peut être retiré du disque. Il n'apparaît ici que si aucune photo d'aucune bibliothèque "
+              "ne l'utilise, que le DNG indique avoir été fait à partir de ce fichier et que le DNG est sans perte.",
+        "pt": "Os raw originais (CR2, NEF, ORF, ARW, RAF…) que têm ao lado um DNG feito a partir deles, que está na "
+              "biblioteca no seu lugar: por exemplo os convertidos pelo PresetCraftAppLicator. A biblioteca já não precisa "
+              "do raw e pode ser retirado do disco. Só aparece aqui se nenhuma foto de nenhuma biblioteca o usar, se o DNG "
+              "disser que foi feito a partir desse ficheiro e se o DNG for sem perdas.",
+    },
+    "conv_warn": {
+        "it": "CleanCraftNas controlla solo le librerie LightCraft del suo elenco: se usi questi raw anche con altri "
+              "programmi (per esempio un catalogo di Lightroom), non cancellarli.",
+        "en": "CleanCraftNas only checks the LightCraft libraries in its list: if you also use these raws with other "
+              "programs (for example a Lightroom catalog), don't delete them.",
+        "de": "CleanCraftNas prüft nur die LightCraft-Bibliotheken seiner Liste: Wenn du diese Raws auch mit anderen "
+              "Programmen nutzt (z. B. einem Lightroom-Katalog), lösche sie nicht.",
+        "es": "CleanCraftNas solo comprueba las bibliotecas de LightCraft de su lista: si usas estos raw con otros "
+              "programas (por ejemplo un catálogo de Lightroom), no los borres.",
+        "fr": "CleanCraftNas ne vérifie que les bibliothèques LightCraft de sa liste : si vous utilisez aussi ces raw avec "
+              "d'autres programmes (par exemple un catalogue Lightroom), ne les supprimez pas.",
+        "pt": "O CleanCraftNas só verifica as bibliotecas do LightCraft da sua lista: se também usar estes raw com outros "
+              "programas (por exemplo um catálogo do Lightroom), não os apague.",
+    },
+    "conv_col_raw": {"it": "Raw originale", "en": "Original raw", "de": "Original-Raw", "es": "Raw original",
+                     "fr": "Raw original", "pt": "Raw original"},
+    "conv_col_dng": {"it": "DNG in libreria", "en": "DNG in the library", "de": "DNG in der Bibliothek",
+                     "es": "DNG en la biblioteca", "fr": "DNG dans la bibliothèque", "pt": "DNG na biblioteca"},
+    "conv_scanning": {"it": "Cerco i raw già convertiti…", "en": "Looking for raws already converted…",
+                      "de": "Bereits umgewandelte Raws werden gesucht…", "es": "Buscando raw ya convertidos…",
+                      "fr": "Recherche des raw déjà convertis…", "pt": "A procurar raw já convertidos…"},
+    "conv_none": {"it": "Nessun raw da togliere: in questa libreria non ci sono raw già convertiti in DNG.",
+                  "en": "No raws to remove: this library has no raws already converted to DNG.",
+                  "de": "Keine Raws zu entfernen: In dieser Bibliothek gibt es keine bereits umgewandelten Raws.",
+                  "es": "Ningún raw que quitar: esta biblioteca no tiene raw ya convertidos a DNG.",
+                  "fr": "Aucun raw à retirer : cette bibliothèque n'a pas de raw déjà convertis en DNG.",
+                  "pt": "Nenhum raw a retirar: esta biblioteca não tem raw já convertidos em DNG."},
+    "conv_total": {"it": "{count} raw, {size}", "en": "{count} raws, {size}", "de": "{count} Raws, {size}",
+                   "es": "{count} raw, {size}", "fr": "{count} raw, {size}", "pt": "{count} raw, {size}"},
+    "conv_delete_head": {"it": "Cancellare {count} raw ({size})?", "en": "Delete {count} raws ({size})?",
+                         "de": "{count} Raws löschen ({size})?", "es": "¿Borrar {count} raw ({size})?",
+                         "fr": "Supprimer {count} raw ({size}) ?", "pt": "Apagar {count} raw ({size})?"},
+    "conv_delete_body": {
+        "it": "Restano i DNG in libreria, con tutte le modifiche. I raw sul NAS finiscono nel cestino del NAS (se è attivo "
+              "sulla cartella condivisa), quelli sul PC nel Cestino di Windows. La libreria non viene toccata.",
+        "en": "The DNGs stay in the library, with all their edits. Raws on the NAS go to the NAS's recycle bin (if it is "
+              "enabled on the shared folder), those on the PC to the Windows Recycle Bin. The library is not touched.",
+        "de": "Die DNGs bleiben mit allen Änderungen in der Bibliothek. Raws auf dem NAS landen im Papierkorb des NAS "
+              "(sofern aktiviert), die auf dem PC im Windows-Papierkorb. Die Bibliothek wird nicht verändert.",
+        "es": "Los DNG siguen en la biblioteca, con todas sus ediciones. Los raw del NAS van a la papelera del NAS (si "
+              "está activada), los del PC a la Papelera de reciclaje de Windows. La biblioteca no se toca.",
+        "fr": "Les DNG restent dans la bibliothèque, avec toutes leurs retouches. Les raw du NAS vont dans la corbeille du "
+              "NAS (si elle est activée), ceux du PC dans la Corbeille de Windows. La bibliothèque n'est pas modifiée.",
+        "pt": "Os DNG ficam na biblioteca, com todas as edições. Os raw no NAS vão para a reciclagem do NAS (se estiver "
+              "ativa), os do PC para a Reciclagem do Windows. A biblioteca não é alterada.",
+    },
+    "conv_delete_failed": {"it": "Alcuni raw non si sono potuti cancellare (in uso, o cartella non scrivibile):",
+                           "en": "Some raws could not be deleted (in use, or folder not writable):",
+                           "de": "Einige Raws konnten nicht gelöscht werden (in Verwendung oder Ordner schreibgeschützt):",
+                           "es": "Algunos raw no se pudieron borrar (en uso, o carpeta sin permiso de escritura):",
+                           "fr": "Certains raw n'ont pas pu être supprimés (en cours d'utilisation, ou dossier non inscriptible) :",
+                           "pt": "Alguns raw não puderam ser apagados (em uso, ou pasta sem permissão de escrita):"},
     "w_yes": {"it": "Sì", "en": "Yes", "de": "Ja", "es": "Sí", "fr": "Oui", "pt": "Sim"},
     "w_no": {"it": "No", "en": "No", "de": "Nein", "es": "No", "fr": "Non", "pt": "Não"},
 }

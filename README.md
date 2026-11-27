@@ -130,6 +130,17 @@ default). The **Backups…** button lists the backups of the current library (al
 versions) with date and size, opens their folder and deletes the ones you select, or all of them: they go to the Recycle
 Bin.
 
+### Raws already converted to DNG
+
+When proprietary raws (CR2, NEF, ORF, ARW, RAF…) are converted to DNG — for example by
+[PresetCraftAppLicator](https://github.com/poty87/PresetCraftAppLicator), which imports the DNG into the library and
+leaves the original next to it — the original stays on the NAS taking space. **☰ › Raws already converted to DNG…** lists
+them for the current library and deletes the ones you choose. A raw is listed only if no photo of any library in
+CleanCraftNas uses it, the DNG next to it is in the library, the DNG records that very raw as its original
+(`OriginalRawFileName`, written by Adobe DNG Converter) and the DNG is lossless. Files go to the NAS recycle bin (or the
+Windows one) and are written to the log; the library is not changed. CleanCraftNas does not check other programs: if you
+still use those raws elsewhere (for example in a Lightroom catalog), keep them.
+
 ## Install
 
 Download **`CleanCraftNas-Setup-x.y.z.exe`** from [Releases](https://github.com/poty87/CleanCraftNas/releases/latest) and run it.
@@ -377,6 +388,14 @@ destro sulle intestazioni; per cambiarne l'ordine **trascina un'intestazione** a
 **Backup:** prima di ogni pulizia il catalogo della libreria viene copiato in una cartella `CleanCraftNas backup - <libreria>`,
 accanto alla libreria oppure nella cartella che scegli in **⚙ Impostazioni**, dove decidi anche quanti backup tenere. Con il
 pulsante **Backup…** li vedi tutti, con data e dimensione, e puoi eliminare quelli selezionati o tutti (finiscono nel Cestino).
+
+**Raw già convertiti in DNG:** quando i raw proprietari (CR2, NEF, ORF, ARW, RAF…) vengono convertiti in DNG — per esempio
+da PresetCraftAppLicator, che importa il DNG in libreria e lascia l'originale accanto — l'originale resta sul NAS a occupare
+spazio. **☰ › Raw già convertiti in DNG…** li elenca per la libreria aperta e cancella quelli che scegli. Un raw compare solo
+se nessuna foto delle librerie di CleanCraftNas lo usa, il DNG accanto è in libreria, il DNG indica proprio quel raw come
+suo originale (`OriginalRawFileName`, scritto da Adobe DNG Converter) e il DNG è senza perdita. I file vanno nel cestino del
+NAS (o di Windows) e finiscono nel registro; la libreria non viene toccata. CleanCraftNas non controlla altri programmi: se
+usi ancora quei raw altrove (per esempio in un catalogo di Lightroom), tienili.
 
 Protezioni: non parte se LightCraft è aperto; non cancella mai un file usato da una foto ancora in libreria (per esempio
 l'originale di una copia virtuale); i file sul NAS finiscono nel **cestino del NAS** della cartella condivisa, se è attivo

@@ -728,6 +728,263 @@ class SettingsDialog(tk.Toplevel):
         self.destroy()
 
 
+# ---------------------------------------------------------------- raw già convertiti in DNG
+
+# raw proprietari che un DNG può sostituire (il DNG stesso, i JPEG e i TIFF no)
+PROPRIETARY_RAWS = (".cr2", ".cr3", ".crw", ".nef", ".nrw", ".arw", ".srf", ".sr2", ".raf", ".orf", ".rw2", ".rwl",
+                    ".pef", ".srw", ".x3f", ".3fr", ".iiq", ".erf", ".mrw", ".kdc", ".dcr", ".mos", ".mef", ".raw")
+
+
+def dng_info(path):
+    """Cosa dice il DNG di sé: (nome del raw da cui è stato fatto o None, i dati raw sono con perdita?).
+
+    Il nome dell'originale lo scrive Adobe DNG Converter (tag OriginalRawFileName, 50827); "con perdita" vuol dire
+    compressione 34892 nei dati raw (NewSubFileType 0), come nei DNG "leggeri" di Lightroom. None se non si legge."""
+    import struct
+    try:
+        with open(path, "rb") as f:
+            head = f.read(8)
+            if head[:2] == b"II":
+                e = "<"
+            elif head[:2] == b"MM":
+                e = ">"
+            else:
+                return None
+            if struct.unpack(e + "H", head[2:4])[0] != 42:
+                return None
+
+            def ifd(at):
+                f.seek(at)
+                raw = f.read(2)
+                if len(raw) < 2:
+                    return {}, 0
+                n = struct.unpack(e + "H", raw)[0]
+                if n > 1000:
+                    return {}, 0
+                data = f.read(n * 12 + 4)
+                tags = {}
+                for i in range(n):
+                    tag, typ, cnt = struct.unpack(e + "HHI", data[i * 12:i * 12 + 8])
+                    tags[tag] = (typ, cnt, data[i * 12 + 8:i * 12 + 12])
+                return tags, struct.unpack(e + "I", data[n * 12:n * 12 + 4])[0]
+
+            def values(tags, tag):
+                typ, cnt, v = tags[tag]
+                size = {3: 2, 4: 4, 13: 4}.get(typ, 0)
+                if not size:
+                    return []
+                if size * cnt > 4:
+                    f.seek(struct.unpack(e + "I", v)[0])
+                    v = f.read(size * min(cnt, 64))
+                fmt = "H" if size == 2 else "I"
+                return [struct.unpack(e + fmt, v[k * size:(k + 1) * size])[0] for k in range(min(cnt, len(v) // size))]
+
+            ifd0, _next = ifd(struct.unpack(e + "I", head[4:8])[0])
+            original = None
+            if 50827 in ifd0:
+                typ, cnt, v = ifd0[50827]
+                if cnt > 4:
+                    f.seek(struct.unpack(e + "I", v)[0])
+                    v = f.read(min(cnt, 1024))
+                original = v[:cnt].split(b"\0")[0].decode("utf-8", "replace").strip() or None
+            # i dati raw: nella prima IFD o in una delle SubIFD (330), quella con NewSubFileType 0
+            lossy = False
+            candidates = [ifd0] + [ifd(off)[0] for off in (values(ifd0, 330) if 330 in ifd0 else [])]
+            for tags in candidates:
+                kind = values(tags, 254)[0] if 254 in tags and values(tags, 254) else 0
+                comp = values(tags, 259)[0] if 259 in tags and values(tags, 259) else 0
+                if kind == 0 and comp == 34892:
+                    lossy = True
+            return original, lossy
+    except (OSError, struct.error, IndexError, UnicodeDecodeError):
+        return None
+
+
+def find_converted(lib, libraries):
+    """I raw proprietari della libreria `lib` che hanno già un DNG fatto da loro, e quindi si possono togliere dal disco.
+
+    Un raw entra nell'elenco solo se: (1) nessuna foto di nessuna libreria lo usa (nemmeno nel cestino); (2) accanto
+    c'è un DNG con lo stesso nome (o "-dng", come lo scrive PresetCraftAppLicator) che è una foto attiva della libreria;
+    (3) dentro il DNG il nome dell'originale è proprio quel raw; (4) il DNG non è con perdita. Restituisce
+    [{"path", "name", "bytes", "dng"}], ordinati per percorso."""
+    cat = read_catalog(lib)
+
+    def path_of(p):
+        s = p.get("source") or {}
+        return s.get("path") if s.get("type") == "file" else None
+
+    used = set()
+    for other in {os.path.normcase(os.path.normpath(x)) for x in [lib, *libraries] if x}:
+        try:
+            for p in read_catalog(other)["photos"].values():
+                if path_of(p):
+                    used.add(os.path.normcase(path_of(p)))
+        except (OSError, ValueError, KeyError):
+            continue  # una libreria che non si legge (spostata, disco staccato) non conta
+    dngs = {os.path.normcase(path_of(p)) for p in cat["photos"].values()
+            if not p.get("deleted") and path_of(p) and path_of(p).lower().endswith(".dng")}
+    folders = {os.path.dirname(path_of(p)) for p in cat["photos"].values() if path_of(p)}
+    shown = {os.path.normcase(f): f for f in folders}  # la cartella con le maiuscole di prima (gli elenchi sono in minuscolo)
+    t0 = time.time()
+    listings = list_folders(folders)
+    found = []
+    for folder, listing in listings.items():
+        if not listing:
+            continue
+        folder = shown.get(folder, folder)
+        for low, (name, size, _c, _m) in listing.items():
+            if os.path.splitext(low)[1] not in PROPRIETARY_RAWS:
+                continue
+            full = os.path.join(folder, name)
+            if os.path.normcase(full) in used:
+                continue
+            stem = os.path.splitext(low)[0]
+            # i nomi che dà PresetCraftAppLicator: foto.dng, o foto-dng.dng, foto-dng2.dng… se c'era già un foto.dng
+            twins = [listing[k][0] for k in listing
+                     if k == stem + ".dng" or k == stem + "-dng.dng" or
+                     (k.startswith(stem + "-dng") and k.endswith(".dng") and k[len(stem) + 4:-4].isdigit())]
+            for twin in twins:
+                dng = os.path.join(folder, twin)
+                if os.path.normcase(dng) not in dngs:
+                    continue
+                info = dng_info(dng)
+                if not info or info[1] or not info[0] or info[0].lower() != name.lower():
+                    continue
+                found.append({"path": full, "name": name, "bytes": size, "dng": dng})
+                break
+    log(f"converted raws: {len(found)} in {len(listings)} folders ({time.time() - t0:.1f} s)")
+    return sorted(found, key=lambda x: x["path"].lower())
+
+
+def delete_raws(paths):
+    """Sposta i raw nel cestino (del NAS o di Windows), a gruppi; restituisce quelli che non è riuscito a togliere."""
+    for i in range(0, len(paths), DELETE_BATCH):
+        delete_files(paths[i:i + DELETE_BATCH])
+    still = [p for p, there in existing(paths).items() if there]
+    for p in paths:
+        log(("converted raw NOT deleted: " if p in still else "converted raw deleted: ") + p)
+    return still
+
+
+class ConvertedDialog(tk.Toplevel):
+    """I raw proprietari già convertiti in DNG (il DNG è in libreria, il raw no): si possono togliere dal disco."""
+
+    def __init__(self, app):
+        super().__init__(app)
+        self.withdraw()
+        self.app = app
+        self.lib = app.settings.get("library")
+        self.title(t("conv_title"))
+        self.geometry("900x520")
+        self.minsize(700, 400)
+        self.transient(app)
+        set_icon(self)
+        frame = ttk.Frame(self, padding=(24, 22, 24, 18))
+        frame.pack(fill="both", expand=True)
+        ttk.Label(frame, text=t("conv_title"), style="Title.TLabel").pack(anchor="w")
+        ttk.Label(frame, text=t("conv_intro"), style="Body.TLabel", wraplength=840, justify="left").pack(
+            anchor="w", pady=(6, 0))
+        ttk.Label(frame, text="ⓘ  " + t("conv_warn"), style="Muted.TLabel", wraplength=840, justify="left").pack(
+            anchor="w", pady=(6, 0))
+
+        buttons = ttk.Frame(frame)
+        buttons.pack(side="bottom", fill="x", pady=(14, 0))
+        ttk.Button(buttons, text=t("w_close"), style="Accent.TButton", command=self.destroy).pack(side="right")
+        self.btn_all = ttk.Button(buttons, text=t("btn_delete_all"), command=lambda: self.delete(all_=True))
+        self.btn_all.pack(side="right", padx=(0, 8))
+        self.btn_sel = ttk.Button(buttons, text=t("btn_delete_selected"), command=self.delete)
+        self.btn_sel.pack(side="right", padx=(0, 8))
+        ttk.Button(buttons, text=t("btn_open_folder"), command=self.open_folder).pack(side="left")
+        self.total = ttk.Label(buttons, style="Muted.TLabel")
+        self.total.pack(side="left", padx=(12, 0))
+
+        listf = ttk.Frame(frame)
+        listf.pack(fill="both", expand=True, pady=(14, 0))
+        self.tree = ttk.Treeview(listf, columns=("raw", "size", "dng", "folder"), show="headings",
+                                 selectmode="extended")
+        for c, title, w, anchor, stretch in (("raw", t("conv_col_raw"), 230, "w", False),
+                                             ("size", t("col_size") + "   ", 90, "e", False),
+                                             ("dng", "   " + t("conv_col_dng"), 230, "w", False),
+                                             ("folder", t("col_folder"), 300, "w", True)):
+            self.tree.heading(c, text=title, anchor=anchor)
+            self.tree.column(c, width=w, minwidth=60, anchor=anchor, stretch=stretch)
+        attach_scrollbars(self.tree)
+        self.tree.bind("<<TreeviewSelect>>", lambda e: self.update_buttons())
+        self.bind("<Escape>", lambda e: self.destroy())
+
+        self.items = {}
+        self.load()
+        center_on(self, app)
+        dark_title_bar(self)
+        reveal(self)
+        self.grab_set()
+
+    def load(self):
+        """Cerca in sottofondo (sul NAS le cartelle grandi richiedono qualche secondo)."""
+        self.tree.delete(*self.tree.get_children())
+        self.items = {}
+        self.update_buttons()
+        if not is_library(self.lib):
+            self.total.configure(text=t("no_library"))
+            return
+        self.total.configure(text=t("conv_scanning"))
+        self.config(cursor="watch")
+        libraries = list(self.app.settings.get("libraries") or [])
+
+        def work():
+            try:
+                found, error = find_converted(self.lib, libraries), None
+            except Exception as e:  # noqa: BLE001
+                found, error = [], str(e)
+            self.after(0, lambda: self.show(found, error))
+        threading.Thread(target=work, daemon=True).start()
+
+    def show(self, found, error):
+        if not self.winfo_exists():
+            return
+        self.config(cursor="")
+        for x in found:
+            row = self.tree.insert("", "end", values=(x["name"], human(x["bytes"]), "   " + os.path.basename(x["dng"]),
+                                                      os.path.dirname(x["path"])))
+            self.items[row] = x
+        if error:
+            self.total.configure(text=t("st_read_error") + " " + error)
+        else:
+            total = sum(x["bytes"] for x in found)
+            self.total.configure(text=t("conv_total", count=len(found), size=human(total)) if found
+                                 else t("conv_none"))
+        self.update_buttons()
+
+    def update_buttons(self):
+        self.btn_sel.state(["!disabled"] if self.tree.selection() else ["disabled"])
+        self.btn_all.state(["!disabled"] if self.items else ["disabled"])
+
+    def open_folder(self):
+        sel = self.tree.selection()
+        if sel:
+            subprocess.Popen(f'explorer /select,"{self.items[sel[0]]["path"]}"')
+
+    def delete(self, all_=False):
+        chosen = list(self.items.values()) if all_ else [self.items[r] for r in self.tree.selection()]
+        if not chosen:
+            return
+        size = human(sum(x["bytes"] for x in chosen))
+        answer = Dialog.ask(self, t("conv_title"), t("conv_delete_head", count=len(chosen), size=size),
+                            t("conv_delete_body"), level="warn",
+                            buttons=[("cancel", t("btn_cancel"), False), ("delete", t("btn_delete"), True)],
+                            default="cancel")
+        if answer != "delete":
+            return
+        self.config(cursor="watch")
+        self.update()
+        failed = delete_raws([x["path"] for x in chosen])
+        self.config(cursor="")
+        if failed:
+            Dialog.ask(self, t("conv_title"), t("conv_delete_failed"), None, level="error",
+                       detail="\n".join(failed[:20]))
+        self.load()
+
+
 class BackupsDialog(tk.Toplevel):
     """Elenco dei backup della libreria corrente, con apertura della cartella ed eliminazione."""
 
@@ -1585,10 +1842,14 @@ class App(tk.Tk):
 
     def more_menu(self):
         """☰ in alto a destra: le finestre che servono di rado (registro, backup), come il menu ☰ del telefono."""
-        popup_menu(self.btn_more, [(t("open_log"), self.open_log), (t("backups_btn"), self.open_backups)])
+        popup_menu(self.btn_more, [(t("open_log"), self.open_log), (t("backups_btn"), self.open_backups),
+                                   (t("conv_btn"), self.open_converted)])
 
     def open_backups(self):
         self.wait_window(BackupsDialog(self))
+
+    def open_converted(self):
+        self.wait_window(ConvertedDialog(self))
 
     def open_log(self):
         if os.path.exists(LOG):
